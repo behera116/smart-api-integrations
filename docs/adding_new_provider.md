@@ -38,7 +38,9 @@ This creates:
 ### 1. Create Provider Directory
 
 ```bash
-mkdir -p newfies/smart_api/providers/myapi
+mkdir -p src/providers/myapi
+cd src/providers/myapi
+touch config.yaml
 ```
 
 ### 2. Create Configuration File
@@ -375,7 +377,7 @@ export MYAPI_TOKEN="your-api-token-here"
 ### 2. Test Basic Connection
 
 ```python
-from newfies.smart_api.clients import MyAPIClient
+from smart_api_integrations.clients import MyAPIClient
 
 # Initialize client
 client = MyAPIClient()
@@ -410,7 +412,7 @@ Create `tests/test_myapi.py`:
 
 ```python
 import pytest
-from newfies.smart_api.clients import MyAPIClient
+from smart_api_integrations.clients import MyAPIClient
 
 
 class TestMyAPIIntegration:
@@ -636,7 +638,7 @@ endpoints:
 python manage.py list_providers
 
 # Verify configuration file exists
-ls newfies/smart_api/providers/myapi/config.yaml
+ls src/providers/myapi/config.yaml
 ```
 
 ### Authentication Errors
@@ -647,7 +649,7 @@ echo $MYAPI_TOKEN
 
 # Test with explicit token
 python -c "
-from newfies.smart_api.clients import MyAPIClient
+from smart_api_integrations.clients import MyAPIClient
 client = MyAPIClient(token='your-token-here')
 response = client.get_user()
 print(response.error if not response.success else 'Success')
@@ -661,7 +663,7 @@ print(response.error if not response.success else 'Success')
 python manage.py list_endpoints --provider myapi
 
 # Check endpoint configuration
-grep -A 5 "endpoint_name:" providers/myapi/config.yaml
+grep -A 5 "endpoint_name:" src/providers/myapi/config.yaml
 ```
 
 ## Next Steps

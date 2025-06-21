@@ -24,7 +24,7 @@ class ConfigLoader:
             self.providers_directory = Path(providers_directory)
         else:
             # Check environment variable first
-            env_providers_dir = os.environ.get('SMART_API_PROVIDERS_DIR')
+            env_providers_dir = os.environ.get('SMART_API_INTEGRATIONS_PROVIDERS_DIR')
             if env_providers_dir:
                 self.providers_directory = Path(env_providers_dir)
             else:

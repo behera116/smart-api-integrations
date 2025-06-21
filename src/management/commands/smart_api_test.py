@@ -4,7 +4,7 @@ Usage: python manage.py smart_api_test
 """
 
 from django.core.management.base import BaseCommand, CommandError
-from newfies.smart_api.examples import run_all_examples
+from smart_api_integrations.examples import run_all_examples
 
 
 class Command(BaseCommand):
@@ -25,7 +25,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             if options['list_providers']:
-                from newfies.smart_api.core.registry import list_providers, get_provider_info
+                from smart_api_integrations.core.registry import list_providers, get_provider_info
                 
                 providers = list_providers()
                 self.stdout.write(
@@ -63,7 +63,7 @@ class Command(BaseCommand):
     
     def test_provider(self, provider_name):
         """Test a specific provider."""
-        from newfies.smart_api.core.registry import get_client, get_provider_info
+        from smart_api_integrations.core.registry import get_client, get_provider_info
         
         try:
             # Check if provider exists

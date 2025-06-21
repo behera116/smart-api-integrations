@@ -35,7 +35,7 @@ class WebhookRegistry:
     def _load_configurations(self):
         """Load webhook configurations from YAML files."""
         try:
-            # Get the smart_api directory
+            # Get the src directory
             current_dir = Path(__file__).parent.parent
             providers_dir = current_dir / 'providers'
             

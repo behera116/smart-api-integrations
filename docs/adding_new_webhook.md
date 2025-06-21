@@ -40,7 +40,7 @@ export MYAPI_WEBHOOK_SECRET="whsec_your_webhook_secret"
 3. **Create a handler**:
 
 ```python
-from newfies.smart_api.webhooks import webhook_handler
+from smart_api_integrations.webhooks import webhook_handler
 
 @webhook_handler('myapi', 'resource.created')
 def handle_resource_created(event):
@@ -138,7 +138,7 @@ ip_whitelist:
 Simple handlers using decorators:
 
 ```python
-from newfies.smart_api.webhooks import webhook_handler
+from smart_api_integrations.webhooks import webhook_handler
 
 @webhook_handler('myapi', 'user.created')
 def handle_user_created(event):
@@ -175,7 +175,7 @@ def handle_payment_completed(event):
 For more complex logic with shared functionality:
 
 ```python
-from newfies.smart_api.webhooks import WebhookHandler
+from smart_api_integrations.webhooks import WebhookHandler
 from myapp.models import User, Order
 from myapp.services import EmailService, OrderService
 
@@ -260,7 +260,7 @@ myapi_handler = MyAPIWebhookHandler()
 Handle multiple event types with one handler:
 
 ```python
-from newfies.smart_api.webhooks import batch_webhook_handler
+from smart_api_integrations.webhooks import batch_webhook_handler
 
 @batch_webhook_handler('myapi', [
     'resource.created',
@@ -284,7 +284,7 @@ def handle_resource_events(event):
 Add preprocessing, logging, or authentication:
 
 ```python
-from newfies.smart_api.webhooks import webhook_middleware
+from smart_api_integrations.webhooks import webhook_middleware
 
 @webhook_middleware('myapi')
 def log_all_events(event):
@@ -348,7 +348,7 @@ signature == expected
 For providers with unique verification methods:
 
 ```python
-from newfies.smart_api.core.webhook import WebhookVerifier
+from smart_api_integrations.core.webhook import WebhookVerifier
 
 class MyAPIWebhookVerifier(WebhookVerifier):
     """Custom signature verification for MyAPI."""
@@ -374,7 +374,7 @@ class MyAPIWebhookVerifier(WebhookVerifier):
         return hmac.compare_digest(expected, hash_value)
 
 # Register custom verifier
-from newfies.smart_api.core.webhook_registry import get_webhook_registry
+from smart_api_integrations.core.webhook_registry import get_webhook_registry
 
 registry = get_webhook_registry()
 processor = registry.create_processor('myapi')
@@ -477,8 +477,8 @@ Create `tests/fixtures/myapi_webhooks.json`:
 ```python
 import pytest
 from unittest.mock import patch
-from newfies.smart_api.core.webhook_schema import WebhookEvent
-from newfies.smart_api.webhooks.handlers import MyAPIWebhookHandler
+from smart_api_integrations.core.webhook_schema import WebhookEvent
+from smart_api_integrations.webhooks.handlers import MyAPIWebhookHandler
 
 class TestMyAPIWebhooks:
     @pytest.fixture
@@ -559,9 +559,18 @@ from django.urls import reverse
 class TestWebhookIntegration(TestCase):
     def setUp(self):
         self.client = Client()
-        self.webhook_url = reverse('smart_api:webhook-default', kwargs={
+        self.webhook_url = reverse('smart_api_integrations:webhook-default', kwargs={
             'provider': 'myapi'
         })
+        
+        # Set up test data
+        self.webhook_payload = {
+            'event_type': 'resource.created',
+            'data': {
+                'id': '123',
+                'name': 'Test Resource'
+            }
+        }
     
     def test_webhook_endpoint(self):
         """Test webhook endpoint accepts valid webhooks."""
@@ -606,7 +615,7 @@ For heavy processing, queue events:
 
 ```python
 from celery import shared_task
-from newfies.smart_api.webhooks import webhook_handler
+from smart_api_integrations.webhooks import webhook_handler
 
 @webhook_handler('myapi', 'large.import')
 def handle_large_import(event):
@@ -931,7 +940,7 @@ print(f"Expected signature: {signature}")
 
 2. **Verify handler registration**:
 ```python
-from newfies.smart_api.core.webhook_registry import get_webhook_registry
+from smart_api_integrations.core.webhook_registry import get_webhook_registry
 
 registry = get_webhook_registry()
 processor = registry.get_processor('myapi:default')
@@ -982,4 +991,4 @@ def handle_with_cache(event):
 3. **Document Events**: Create documentation for all webhook events your app handles
 4. **Test End-to-End**: Test the complete webhook flow from provider to your handlers
 
-For more examples, see the existing webhook implementations in `webhooks/` directory. 
+For more examples, see the existing webhook implementations in `src/webhooks/` directory.

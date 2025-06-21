@@ -492,7 +492,7 @@ class Command(BaseCommand):
 """
 
 import os
-from newfies.smart_api.clients.universal import UniversalAPIClient
+from smart_api_integrations.clients.universal import UniversalAPIClient
 
 
 class {class_name}(UniversalAPIClient):
@@ -550,7 +550,7 @@ class {class_name}(UniversalAPIClient):
         
         # Usage example
         self.stdout.write("4. Use in your code:")
-        self.stdout.write(f"   from newfies.smart_api.clients.{provider_name} import {provider_name.title()}APIClient")
+        self.stdout.write(f"   from smart_api_integrations.clients.{provider_name} import {provider_name.title()}APIClient")
         self.stdout.write(f"   client = {provider_name.title()}APIClient()")
         self.stdout.write(f"   response = client.health_check()")
         self.stdout.write("")

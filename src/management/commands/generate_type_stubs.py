@@ -23,7 +23,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--output-dir',
             type=str,
-            default='newfies/smart_api/typings',
+            default='src/typings',
             help='Output directory for type stub files'
         )
 
@@ -38,7 +38,7 @@ class Command(BaseCommand):
 
     def generate_all_stubs(self, output_dir: Path):
         """Generate type stubs for all providers."""
-        providers_dir = Path('newfies/smart_api/providers')
+        providers_dir = Path('src/providers')
         
         if not providers_dir.exists():
             self.stdout.write(self.style.ERROR(f"Providers directory not found: {providers_dir}"))
@@ -51,7 +51,7 @@ class Command(BaseCommand):
 
     def generate_stub_for_provider(self, provider_name: str, output_dir: Path):
         """Generate type stub for a specific provider."""
-        config_path = Path(f'newfies/smart_api/providers/{provider_name}/config.yaml')
+        config_path = Path(f'src/providers/{provider_name}/config.yaml')
         
         if not config_path.exists():
             self.stdout.write(self.style.ERROR(f"Config not found: {config_path}"))
