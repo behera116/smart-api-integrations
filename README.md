@@ -791,7 +791,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ```bash
 # Clone the repository
-git clone https://github.com/anandabehera/smart-api-integrations.git
+git clone https://github.com/behera116/smart-api-integrations.git
 cd smart-api-integrations
 
 # Create virtual environment
@@ -817,7 +817,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - 📧 Email: behera.anand1@gmail.com
-- 🐛 Issues: [GitHub Issues](https://github.com/anandabehera/smart-api-integrations/issues)
+- 🐛 Issues: [GitHub Issues](https://github.com/behera116/smart-api-integrations/issues)
 - 📖 Documentation: [Full Documentation](https://smart-api-integrations.readthedocs.io)
 
 ## Acknowledgments
