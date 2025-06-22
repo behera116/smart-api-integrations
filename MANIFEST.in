@@ -1,7 +1,48 @@
 include LICENSE
 include README.md
-include src/cli/README.md
+include CHANGELOG.md
+include pyproject.toml
+include MANIFEST.in
+
+# Documentation
+recursive-include docs *.md
+recursive-include docs *.yml
+recursive-include docs *.yaml
+
+# Examples
+recursive-include examples *.py
+recursive-include examples *.md
+recursive-include examples *.yml
+recursive-include examples *.yaml
+
+# Provider configurations
+recursive-include providers *.yml
+recursive-include providers *.yaml
+
+# Source code
 recursive-include src *.py
 recursive-include src *.pyi
-recursive-include src/cli *.md
-recursive-include providers *.yaml
+recursive-include src *.typed
+
+# Templates and data files
+recursive-include src *.yaml
+recursive-include src *.yml
+recursive-include src *.json
+recursive-include src *.txt
+
+# Tests (for source distribution)
+recursive-include tests *.py
+recursive-include tests *.yml
+recursive-include tests *.yaml
+recursive-include tests *.json
+
+# Exclude unnecessary files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude .git*
+global-exclude .coverage
+global-exclude .pytest_cache
