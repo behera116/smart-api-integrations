@@ -40,7 +40,20 @@ if FASTAPI_AVAILABLE:
 
 
     def create_fastapi_router() -> APIRouter:
-        """Create FastAPI router for webhook handling."""
+        """
+        Create FastAPI router for webhook handling.
+        
+        Returns:
+            FastAPI router with webhook endpoints
+            
+        Example:
+            from fastapi import FastAPI
+            from smart_api_integrations.frameworks.fastapi import create_fastapi_router
+            
+            app = FastAPI()
+            webhook_router = create_fastapi_router()
+            app.include_router(webhook_router)
+        """
         router = APIRouter()
         handler = BaseWebhookHandler()
         

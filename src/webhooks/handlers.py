@@ -235,38 +235,29 @@ class SlackWebhookHandler(WebhookHandler):
         })
 
 
-def webhook_handler(provider: str, event_type: str):
+# Import the renamed decorator for backward compatibility
+from .decorators import smart_webhook_handler as webhook_handler
+
+# Deprecated - use smart_webhook_handler instead
+def webhook_handler_deprecated(provider: str, event_type: str):
     """
+    DEPRECATED: Use smart_webhook_handler instead.
     Decorator to register a webhook handler function.
     
     Example:
-        @webhook_handler('stripe', 'payment_intent.succeeded')
+        @smart_webhook_handler('stripe', 'payment_intent.succeeded')
         def handle_payment(event):
             payment_intent = event.payload['data']['object']
             # Process payment
             return {'success': True}
     """
-    def decorator(func):
-        registry = get_webhook_registry()
-        processor_key = f"{provider}:default"
-        processor = registry.get_processor(processor_key)
-        
-        if not processor:
-            try:
-                processor = registry.create_processor(provider, 'default')
-            except ValueError as e:
-                logger.error(f"Failed to create processor: {e}")
-                return func
-        
-        processor.on(event_type, func)
-        
-        # Add attributes to the function for introspection
-        func.__webhook_provider__ = provider
-        func.__webhook_event__ = event_type
-        
-        logger.info(f"Registered webhook handler for {provider}:{event_type}")
-        return func
-    return decorator
+    import warnings
+    warnings.warn(
+        "webhook_handler is deprecated. Use smart_webhook_handler instead.",
+        DeprecationWarning, 
+        stacklevel=2
+    )
+    return webhook_handler(provider, event_type)
 
 
 def webhook_middleware(provider: str = None):

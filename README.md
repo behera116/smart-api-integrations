@@ -410,6 +410,39 @@ smart-api-integrations add-endpoints myapi --url https://docs.example.com/api
 smart-api-integrations list-providers
 ```
 
+### Webhook Management
+```bash
+# Add webhook configuration to a provider
+smart-api-integrations add-webhook github --event push --secret-env GITHUB_WEBHOOK_SECRET
+
+# Generate webhook handler class
+smart-api-integrations generate-webhook-handler github --events push pull_request --output-file ./handlers/github_handler.py
+```
+
+```python
+# Generate a GitHub webhook handler class
+from smart_api_integrations.webhooks import generate_webhook_handler, get_webhook_routes
+
+# Generate handler class with event methods
+GitHubHandler = generate_webhook_handler('github', events=['push', 'pull_request'])
+
+# Extend with custom logic
+class MyGitHubHandler(GitHubHandler):
+    def on_push(self, event):
+        print(f"Received push to {event.payload['repository']['name']}")
+        return self.success_response({'processed': True})
+
+# Instantiate handler
+handler = MyGitHubHandler()
+
+# Integrate with your framework
+from flask import Flask
+app = Flask(__name__)
+app.register_blueprint(get_webhook_routes('flask'))
+```
+
+[📘 Quick Start](src/webhooks/README.md) | [🔍 Integration Guide](docs/webhook_integration_guide.md) | [⚡ Integration Example](examples/webhook_integration_example.py)
+
 ### Code Generation
 ```bash
 # Generate type stubs for IDE support
@@ -777,6 +810,8 @@ pytest tests/
 - ✅ **Custom Logic**: Easy to extend with business-specific methods
 - ✅ **Production Ready**: Built-in error handling, retries, rate limiting
 - ✅ **AI Assistance**: Generate endpoints from documentation URLs
+- ✅ **Webhook Support**: Easily handle incoming webhook events
+- ✅ **Framework Integration**: Works with Flask, FastAPI, and Django
 
 ## 📄 License
 
@@ -784,8 +819,13 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-- **Documentation**: [Integration Guide](docs/new_provider_integration_guide.md)
-- **Examples**: [examples/](examples/) directory
+- **Documentation**: 
+  - [Provider Integration Guide](docs/new_provider_integration_guide.md)
+  - [Webhook Integration Guide](docs/webhook_integration_guide.md)
+- **Examples**: 
+  - [API Examples](examples/github_basic_example.py)
+  - [Webhook Examples](examples/github_webhook_example.py)
+  - [Flask Integration](examples/flask_webhook_example.py)
 - **Issues**: [GitHub Issues](https://github.com/yourusername/smart-api-integrations/issues)
 
 ---

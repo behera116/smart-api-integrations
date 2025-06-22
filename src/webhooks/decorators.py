@@ -12,7 +12,7 @@ from ..core.webhook_schema import WebhookEvent
 logger = logging.getLogger(__name__)
 
 
-def webhook_handler(provider: str, event_type: str, webhook_name: str = 'default'):
+def smart_webhook_handler(provider: str, event_type: str, webhook_name: str = 'default'):
     """
     Decorator for registering webhook event handlers.
     

@@ -1,0 +1,31 @@
+# GitHub webhook configuration
+default_verification_type: hmac_sha256
+default_signature_header: X-Hub-Signature-256
+ip_whitelist: []  # Optional IP whitelist
+
+webhooks:
+  # Default webhook configuration
+  default:
+    path: /webhooks/github
+    verify_signature: true
+    signing_secret_env: GITHUB_WEBHOOK_SECRET
+    verification_type: hmac_sha256
+    signature_header: X-Hub-Signature-256
+    events:
+      - push
+      - pull_request
+      - issues
+      - issue_comment
+      - release
+      - workflow_run
+    
+  # Repository-specific webhook (example)
+  repo_updates:
+    path: /webhooks/github/repo
+    verify_signature: true
+    signing_secret_env: GITHUB_REPO_WEBHOOK_SECRET
+    verification_type: hmac_sha256
+    signature_header: X-Hub-Signature-256
+    events:
+      - push
+      - pull_request 

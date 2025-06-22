@@ -11,7 +11,23 @@ from ..webhooks import process_webhook
 
 
 def create_flask_blueprint(url_prefix: str = '/webhooks') -> Blueprint:
-    """Create a Flask blueprint for Smart API webhooks."""
+    """
+    Create a Flask blueprint for Smart API webhooks.
+    
+    Args:
+        url_prefix: URL prefix for webhook routes
+        
+    Returns:
+        Flask Blueprint with webhook routes
+        
+    Example:
+        from flask import Flask
+        from smart_api_integrations.frameworks.flask import create_flask_blueprint
+        
+        app = Flask(__name__)
+        webhook_bp = create_flask_blueprint('/api/webhooks')
+        app.register_blueprint(webhook_bp)
+    """
     bp = Blueprint('smart_api_webhooks', __name__, url_prefix=url_prefix)
     
     @bp.route('/<provider>/<event>', methods=['POST'])

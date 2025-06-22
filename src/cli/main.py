@@ -13,8 +13,10 @@ from .commands import (
     add_provider,
     add_endpoints,
     test_webhook,
+    add_webhook,
     generate_type_stubs,
     generate_client,
+    generate_webhook_handler,
     smart_api_test
 )
 
@@ -45,9 +47,11 @@ def main(args: Optional[List[str]] = None) -> int:
     # Register commands
     add_provider.register_command(subparsers)
     add_endpoints.register_command(subparsers)
+    add_webhook.register_command(subparsers)
     test_webhook.register_command(subparsers)
     generate_type_stubs.register_command(subparsers)
     generate_client.register_command(subparsers)
+    generate_webhook_handler.register_command(subparsers)
     smart_api_test.register_command(subparsers)
     
     # Parse arguments
