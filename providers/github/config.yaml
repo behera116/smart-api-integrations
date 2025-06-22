@@ -1,0 +1,200 @@
+name: github
+base_url: https://api.github.com
+description: GitHub REST API
+auth:
+  type: bearer_token
+  token_value: ${GITHUB_TOKEN}
+default_headers:
+  User-Agent: SmartAPI-Integration-Test/1.0
+  Accept: application/vnd.github+json
+endpoints:
+  get_authenticated_user:
+    path: /user
+    method: GET
+    description: Get the authenticated user's profile information
+    parameters:
+      accept:
+        type: string
+        required: false
+        in: header
+        description: Setting to `application/vnd.github+json` is recommended.
+  get_users:
+    path: /users
+    method: GET
+    description: Retrieve a list of users
+    parameters: {}
+  get_user:
+    path: /users/{username}
+    method: GET
+    description: Retrieve a specific user by username
+    parameters:
+      username:
+        type: string
+        required: true
+        in: path
+        description: The username of the user
+  create_user:
+    path: /users
+    method: POST
+    description: Create a new user
+    parameters:
+      username:
+        type: string
+        required: true
+        in: body
+        description: The username of the new user
+      password:
+        type: string
+        required: true
+        in: body
+        description: The password for the new user
+  list_users:
+    path: /users
+    method: GET
+    description: List all users
+    parameters: {}
+  update_user:
+    path: /user
+    method: PATCH
+    description: Update the authenticated user
+    parameters:
+      email:
+        type: string
+        required: false
+        in: body
+        description: The email of the user
+  delete_user:
+    path: /user
+    method: DELETE
+    description: Delete the authenticated user
+    parameters: {}
+  list_repos:
+    path: /user/repos
+    method: GET
+    description: List repositories for the authenticated user
+    parameters: {}
+  get_repo:
+    path: /repos/{owner}/{repo}
+    method: GET
+    description: Get a single repo
+    parameters:
+      owner:
+        type: string
+        required: true
+        in: path
+        description: The owner of the repo
+      repo:
+        type: string
+        required: true
+        in: path
+        description: The name of the repo
+  create_repo:
+    path: /user/repos
+    method: POST
+    description: Create a new repository for the authenticated user
+    parameters:
+      name:
+        type: string
+        required: true
+        in: body
+        description: The name of the repo
+  list_issues:
+    path: /repos/{owner}/{repo}/issues
+    method: GET
+    description: List issues for a repository
+    parameters:
+      owner:
+        type: string
+        required: true
+        in: path
+        description: The owner of the repo
+      repo:
+        type: string
+        required: true
+        in: path
+        description: The name of the repo
+  create_issue:
+    path: /repos/{owner}/{repo}/issues
+    method: POST
+    description: Create a new issue for a repository
+    parameters:
+      owner:
+        type: string
+        required: true
+        in: path
+        description: The owner of the repo
+      repo:
+        type: string
+        required: true
+        in: path
+        description: The name of the repo
+      title:
+        type: string
+        required: true
+        in: body
+        description: The title of the issue
+  update_issue:
+    path: /repos/{owner}/{repo}/issues/{issue_number}
+    method: PATCH
+    description: Update an issue for a repository
+    parameters:
+      owner:
+        type: string
+        required: true
+        in: path
+        description: The owner of the repo
+      repo:
+        type: string
+        required: true
+        in: path
+        description: The name of the repo
+      issue_number:
+        type: string
+        required: true
+        in: path
+        description: The number of the issue
+      title:
+        type: string
+        required: false
+        in: body
+        description: The title of the issue
+  list_user_repos:
+    path: /users/{username}/repos
+    method: GET
+    description: Lists public repositories for the specified user
+    parameters:
+      username:
+        type: string
+        required: true
+        in: path
+        description: The handle for the GitHub user account
+  list_followers:
+    path: /users/{username}/followers
+    method: GET
+    description: Lists the people following the specified user
+    parameters:
+      username:
+        type: string
+        required: true
+        in: path
+        description: The handle for the GitHub user account
+  list_following:
+    path: /users/{username}/following
+    method: GET
+    description: Lists the people the specified user follows
+    parameters:
+      username:
+        type: string
+        required: true
+        in: path
+        description: The handle for the GitHub user account
+  list_gists:
+    path: /users/{username}/gists
+    method: GET
+    description: Lists public gists for the specified user
+    parameters:
+      username:
+        type: string
+        required: true
+        in: path
+        description: The handle for the GitHub user account

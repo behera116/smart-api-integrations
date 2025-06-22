@@ -232,4 +232,157 @@ class SlackWebhookHandler(WebhookHandler):
         return self.success_response({
             'reaction': reaction_event.get('reaction'),
             'user': reaction_event.get('user')
-        }) 
+        })
+
+
+def webhook_handler(provider: str, event_type: str):
+    """
+    Decorator to register a webhook handler function.
+    
+    Example:
+        @webhook_handler('stripe', 'payment_intent.succeeded')
+        def handle_payment(event):
+            payment_intent = event.payload['data']['object']
+            # Process payment
+            return {'success': True}
+    """
+    def decorator(func):
+        registry = get_webhook_registry()
+        processor_key = f"{provider}:default"
+        processor = registry.get_processor(processor_key)
+        
+        if not processor:
+            try:
+                processor = registry.create_processor(provider, 'default')
+            except ValueError as e:
+                logger.error(f"Failed to create processor: {e}")
+                return func
+        
+        processor.on(event_type, func)
+        
+        # Add attributes to the function for introspection
+        func.__webhook_provider__ = provider
+        func.__webhook_event__ = event_type
+        
+        logger.info(f"Registered webhook handler for {provider}:{event_type}")
+        return func
+    return decorator
+
+
+def webhook_middleware(provider: str = None):
+    """
+    Decorator to register a webhook middleware function.
+    
+    Example:
+        @webhook_middleware('stripe')
+        def log_webhook(event, next_handler):
+            logger.info(f"Received {event.provider} webhook: {event.event_type}")
+            return next_handler(event)
+    """
+    def decorator(func):
+        registry = get_webhook_registry()
+        
+        if provider:
+            # Register for specific provider
+            processor_key = f"{provider}:default"
+            processor = registry.get_processor(processor_key)
+            
+            if not processor:
+                try:
+                    processor = registry.create_processor(provider, 'default')
+                except ValueError as e:
+                    logger.error(f"Failed to create processor: {e}")
+                    return func
+            
+            processor.use(func)
+        else:
+            # Register as global middleware
+            registry.add_global_middleware(func)
+        
+        # Add attributes to the function for introspection
+        func.__webhook_middleware__ = True
+        func.__webhook_provider__ = provider
+        
+        logger.info(f"Registered webhook middleware for {provider or 'all providers'}")
+        return func
+    return decorator
+
+
+def process_webhook(
+    provider: str,
+    event: str,
+    payload: Dict[str, Any],
+    headers: Dict[str, str] = None,
+    query_params: Dict[str, str] = None,
+    remote_addr: str = None
+) -> WebhookResponse:
+    """
+    Process a webhook request.
+    
+    Args:
+        provider: Provider name (e.g., 'stripe', 'github')
+        event: Event type (e.g., 'payment_intent.succeeded', 'push')
+        payload: Webhook payload (usually JSON body)
+        headers: Request headers
+        query_params: Query parameters
+        remote_addr: Remote IP address
+        
+    Returns:
+        WebhookResponse object with processing result
+    """
+    registry = get_webhook_registry()
+    processor_key = f"{provider}:default"
+    processor = registry.get_processor(processor_key)
+    
+    if not processor:
+        try:
+            processor = registry.create_processor(provider, 'default')
+        except ValueError as e:
+            logger.error(f"Failed to create processor: {e}")
+            return WebhookResponse(
+                success=False,
+                status_code=400,
+                message=f"Invalid provider: {provider}",
+                error_details={"error": str(e)}
+            )
+    
+    # Create webhook event
+    webhook_event = WebhookEvent(
+        provider=provider,
+        event_type=event,
+        payload=payload,
+        headers=headers or {},
+        query_params=query_params or {},
+        remote_addr=remote_addr
+    )
+    
+    # Process the webhook
+    try:
+        result = processor.process(webhook_event)
+        
+        if isinstance(result, WebhookResponse):
+            return result
+        
+        if isinstance(result, dict) and "success" in result:
+            return WebhookResponse(
+                success=result.get("success", True),
+                status_code=200 if result.get("success", True) else 400,
+                message=result.get("message"),
+                data=result.get("data")
+            )
+        
+        # Default success response
+        return WebhookResponse(
+            success=True,
+            status_code=200,
+            data=result
+        )
+        
+    except Exception as e:
+        logger.exception(f"Error processing webhook {provider}:{event}")
+        return WebhookResponse(
+            success=False,
+            status_code=500,
+            message=f"Error processing webhook: {str(e)}",
+            error_details={"exception": str(e)}
+        ) 

@@ -74,6 +74,34 @@ class UniversalAPIClient:
                 else:
                     final_kwargs['data'] = body
         
+        # Handle direct parameter passing - if parameters are passed directly as kwargs,
+        # group them into the appropriate dictionaries
+        if hasattr(endpoint_config, 'parameters') and endpoint_config.parameters:
+            params_dict = final_kwargs.get('params', {})
+            json_data_dict = final_kwargs.get('json_data', {})
+            
+            # Check for direct parameter passing
+            for param_name, param_config in endpoint_config.parameters.items():
+                if param_name in final_kwargs and param_name not in ['params', 'json_data', 'data', 'headers']:
+                    # Handle both dict and object parameter configurations
+                    if isinstance(param_config, dict):
+                        param_location = param_config.get('in', 'query')
+                    else:
+                        param_location = getattr(param_config, 'in', 'query')
+                    
+                    param_value = final_kwargs.pop(param_name)
+                    
+                    if param_location == 'body':
+                        json_data_dict[param_name] = param_value
+                    else:
+                        # For path and query parameters
+                        params_dict[param_name] = param_value
+            
+            if params_dict:
+                final_kwargs['params'] = params_dict
+            if json_data_dict:
+                final_kwargs['json_data'] = json_data_dict
+        
         # Validate required parameters if defined in config
         if hasattr(endpoint_config, 'parameters'):
             self._validate_required_params(endpoint_name, endpoint_config.parameters, final_kwargs)
@@ -87,15 +115,24 @@ class UniversalAPIClient:
         
         missing_params = []
         for param_name, param_def in param_config.items():
-            if hasattr(param_def, 'required') and param_def.required:
-                # Check if required param is provided in any form
+            # Handle both dict and object parameter definitions
+            if hasattr(param_def, 'required'):
+                required = param_def.required
                 param_location = getattr(param_def, 'in', 'query')
-                
+            elif isinstance(param_def, dict):
+                required = param_def.get('required', False)
+                param_location = param_def.get('in', 'query')
+            else:
+                required = False
+                param_location = 'query'
+            
+            if required:
+                # Check if required param is provided in any form
                 if param_location == 'query' and 'params' in kwargs:
                     if param_name not in kwargs['params']:
                         missing_params.append(f"{param_name} (in params)")
                 elif param_location == 'path':
-                    if param_name not in kwargs.get('params', {}):
+                    if 'params' not in kwargs or param_name not in kwargs['params']:
                         missing_params.append(f"{param_name} (in path)")
                 elif param_location == 'body':
                     if 'json_data' not in kwargs and 'data' not in kwargs:
@@ -122,10 +159,22 @@ class UniversalAPIClient:
         if hasattr(endpoint_config, 'parameters') and endpoint_config.parameters:
             help_text += "\n\nParameters:"
             for param_name, param_def in endpoint_config.parameters.items():
-                param_type = getattr(param_def, 'type', 'string')
-                param_location = getattr(param_def, 'in', 'query')
-                required = getattr(param_def, 'required', False)
-                param_desc = getattr(param_def, 'description', '')
+                # Handle both dict and object parameter definitions
+                if hasattr(param_def, 'type'):
+                    param_type = param_def.type
+                    param_location = getattr(param_def, 'in', 'query')
+                    required = getattr(param_def, 'required', False)
+                    param_desc = getattr(param_def, 'description', '')
+                elif isinstance(param_def, dict):
+                    param_type = param_def.get('type', 'string')
+                    param_location = param_def.get('in', 'query')
+                    required = param_def.get('required', False)
+                    param_desc = param_def.get('description', '')
+                else:
+                    param_type = 'string'
+                    param_location = 'query'
+                    required = False
+                    param_desc = ''
                 
                 req_text = " (required)" if required else ""
                 help_text += f"\n  - {param_name} ({param_type}, in {param_location}){req_text}"

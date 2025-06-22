@@ -17,21 +17,21 @@ class GithubAPIClient(UniversalAPIClient):
     """
     
     # Optional method mapping - maps Python method names to actual endpoints
-    METHOD_MAPPING = {
-        'list_repos': 'list_user_repos',
-        'get_profile': 'get_user',
-        'my_repos': 'list_user_repos',
-    }
     
-    def __init__(self, token_value: str = None):
+    def __init__(self, **auth_overrides):
         """
         Initialize GitHub API client.
         
         Args:
-            token_value: GitHub token (optional, defaults to GITHUB_TOKEN env var)
+            **auth_overrides: Authentication overrides (e.g., token_value='your_token')
+                            If not provided, reads from GITHUB_TOKEN environment variable
         """
-        token = token_value or os.getenv('GITHUB_TOKEN')
-        if not token:
-            raise ValueError("GitHub token required. Set GITHUB_TOKEN environment variable or pass token_value.")
+        # Set default token from environment if not provided
+        if 'token_value' not in auth_overrides:
+            github_token = os.getenv('GITHUB_TOKEN')
+            if github_token:
+                auth_overrides['token_value'] = github_token
+            else:
+                raise ValueError("GitHub token required. Set GITHUB_TOKEN environment variable or pass token_value.")
         
-        super().__init__('github', token_value=token) 
+        super().__init__('github', **auth_overrides) 

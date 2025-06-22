@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name="smart-api-integrations",
+    name="smart_api_integrations",
     version="0.1.0",
     author="Ananda",
     author_email="behera.anand1@gmail.com",
@@ -24,18 +24,26 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "requests>=2.25.0",
+        "requests>=2.28.0",
         "pydantic>=1.8.0",
+        "httpx>=0.23.0",
+        "pyyaml>=6.0",
     ],
     extras_require={
         "django": ["django>=3.0.0"],
         "flask": ["flask>=2.0.0"],
         "fastapi": ["fastapi>=0.68.0", "uvicorn>=0.15.0"],
+        "ai": ["openai>=1.0.0"],
         "dev": [
-            "pytest>=6.0.0",
-            "black>=21.5b2",
-            "isort>=5.9.1",
+            "pytest>=7.0.0",
+            "black>=22.0.0",
+            "isort>=5.10.0",
             "mypy>=0.910",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "smart-api-integrations=smart_api_integrations.cli.main:main",
         ],
     },
 ) 

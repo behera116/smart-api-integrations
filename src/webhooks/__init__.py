@@ -5,7 +5,7 @@ Provides decorators and handlers for webhook processing.
 """
 
 from .base import WebhookRequest, WebhookResponse, BaseWebhookHandler, SimpleWebhookRequest
-from .handlers import webhook_handler, webhook_middleware, WebhookHandler
+from .handlers import webhook_handler, webhook_middleware, WebhookHandler, process_webhook
 
 __all__ = [
     'WebhookRequest',
@@ -15,4 +15,5 @@ __all__ = [
     'webhook_handler',
     'webhook_middleware',
     'WebhookHandler',
+    'process_webhook',
 ] 

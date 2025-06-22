@@ -4,6 +4,7 @@ Pydantic schemas for Smart API system configuration and validation.
 
 from typing import Any, Dict, List, Optional, Union
 from enum import Enum
+import time
 from pydantic import BaseModel, Field, validator
 import httpx
 
@@ -186,9 +187,4 @@ class TokenCache(BaseModel):
         """Check if token is expired (with buffer)."""
         if not self.expires_in:
             return False
-        import time
         return (time.time() - self.created_at) >= (self.expires_in - buffer_seconds)
-
-
-# Import time for TokenCache
-import time 

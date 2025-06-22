@@ -5,6 +5,7 @@ Synchronous implementation for simplicity.
 """
 
 import time
+import re
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
@@ -81,6 +82,7 @@ class SmartAPIClient:
         self,
         endpoint_name: str,
         params: Optional[Dict[str, Any]] = None,
+        path_params: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
         data: Optional[Any] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -101,6 +103,7 @@ class SmartAPIClient:
             endpoint_config=endpoint_config,
             endpoint_name=endpoint_name,
             params=params,
+            path_params=path_params,
             json_data=json_data,
             data=data,
             headers=headers,
@@ -112,6 +115,7 @@ class SmartAPIClient:
         method: str,
         path: str,
         params: Optional[Dict[str, Any]] = None,
+        path_params: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
         data: Optional[Any] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -129,6 +133,7 @@ class SmartAPIClient:
             endpoint_config=endpoint_config,
             endpoint_name=f"{method.upper()}_{path}",
             params=params,
+            path_params=path_params,
             json_data=json_data,
             data=data,
             headers=headers,
@@ -140,6 +145,7 @@ class SmartAPIClient:
         endpoint_config: EndpointConfig,
         endpoint_name: str,
         params: Optional[Dict[str, Any]] = None,
+        path_params: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
         data: Optional[Any] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -166,8 +172,49 @@ class SmartAPIClient:
                 if rate_limiter:
                     rate_limiter.acquire()
                 
-                # Build URL
-                url = urljoin(self.config.base_url, endpoint_config.path.lstrip('/'))
+                # Separate path parameters from query parameters
+                final_path_params = path_params or {}
+                final_query_params = {}
+                final_headers = {}
+                final_json_data = json_data
+                final_data = data
+                
+                # Extract parameters based on endpoint configuration
+                if params and hasattr(endpoint_config, 'parameters') and endpoint_config.parameters:
+                    for param_name, param_config in endpoint_config.parameters.items():
+                        if param_name in params:
+                            # Handle both dict and object parameter configurations
+                            if isinstance(param_config, dict):
+                                param_location = param_config.get('in', 'query')
+                            else:
+                                param_location = getattr(param_config, 'in', 'query')
+                            
+                            param_value = params[param_name]
+                            
+                            if param_location == 'path':
+                                final_path_params[param_name] = param_value
+                            elif param_location == 'query':
+                                final_query_params[param_name] = param_value
+                            elif param_location == 'header':
+                                final_headers[param_name] = str(param_value)
+                            elif param_location == 'body':
+                                # For body parameters, add to json_data if it's a dict
+                                if final_json_data is None:
+                                    final_json_data = {}
+                                if isinstance(final_json_data, dict):
+                                    final_json_data[param_name] = param_value
+                else:
+                    # If no parameter config, treat all params as query parameters
+                    if params:
+                        final_query_params = params.copy()
+                
+                # Build URL with path parameters
+                path = endpoint_config.path
+                if final_path_params:
+                    for key, value in final_path_params.items():
+                        path = path.replace(f"{{{key}}}", str(value))
+                
+                url = urljoin(self.config.base_url, path.lstrip('/'))
                 
                 # Merge headers
                 request_headers = {}
@@ -175,6 +222,8 @@ class SmartAPIClient:
                     request_headers.update(self.config.default_headers)
                 if endpoint_config.headers:
                     request_headers.update(endpoint_config.headers)
+                if final_headers:
+                    request_headers.update(final_headers)
                 if headers:
                     request_headers.update(headers)
                 
@@ -182,9 +231,9 @@ class SmartAPIClient:
                 request = httpx.Request(
                     method=endpoint_config.method.value,
                     url=url,
-                    params=params,
-                    json=json_data,
-                    data=data,
+                    params=final_query_params,
+                    json=final_json_data,
+                    data=final_data,
                     headers=request_headers
                 )
                 
@@ -192,11 +241,18 @@ class SmartAPIClient:
                 request = self.auth_resolver.apply_auth(request)
                 
                 # Validate request body if schema provided
-                if endpoint_config.body_schema and json_data:
-                    self._validate_data(json_data, endpoint_config.body_schema)
+                if endpoint_config.body_schema and final_json_data:
+                    self._validate_data(final_json_data, endpoint_config.body_schema)
                 
-                # Make the request
-                response = self.client.send(request, timeout=timeout or self.config.default_timeout)
+                # Make the request - handle timeout correctly
+                # In newer httpx versions, timeout is set on the client, not passed to send()
+                if timeout is not None:
+                    # Create a temporary client with the specified timeout
+                    with httpx.Client(timeout=timeout) as temp_client:
+                        response = temp_client.send(request)
+                else:
+                    # Use the existing client with its default timeout
+                    response = self.client.send(request)
                 
                 # Validate response if schema provided
                 if endpoint_config.response_schema and response.status_code < 400:

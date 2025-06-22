@@ -41,4 +41,13 @@ htmlcov/
 docs/_build/
 
 # Mac OS
-.DS_Store 
+.DS_Store # Generated type stubs - users should generate their own
+typings/
+src/typings/
+
+# Development providers - users should add their own  
+providers/openweathermap/
+providers/slack/
+
+# Development examples
+examples/openweathermap_example.py

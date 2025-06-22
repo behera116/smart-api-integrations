@@ -1,825 +1,797 @@
-# Smart API Integrations
+# 🚀 Smart API Integrations
 
-A universal API integration system with dynamic client generation, flexible authentication, and comprehensive webhook handling.
+**Eliminate boilerplate when integrating 3rd party APIs. Define endpoints once, get intelligent client classes with full IDE support.**
 
-[![PyPI version](https://badge.fury.io/py/smart-api-integrations.svg)](https://badge.fury.io/py/smart-api-integrations)
-[![Python Support](https://img.shields.io/pypi/pyversions/smart-api-integrations.svg)](https://pypi.org/project/smart-api-integrations/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation Status](https://readthedocs.org/projects/smart-api-integrations/badge/?version=latest)](https://smart-api-integrations.readthedocs.io/en/latest/?badge=latest)
 
-## Table of Contents
+## 🎯 The Problem
 
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Integration with Existing Projects](#integration-with-existing-projects)
-- [Adding New Providers](#adding-new-providers)
-- [Adding Webhooks](#adding-webhooks)
-- [Framework Integration](#framework-integration)
-- [CLI Commands](#cli-commands)
-- [Advanced Features](#advanced-features)
-- [Examples](#examples)
-- [Contributing](#contributing)
-
-## Features
-
-- 🚀 **Dynamic Client Generation** - Auto-generate Python methods from API configurations
-- 🔐 **Multiple Auth Methods** - Bearer, API Key, OAuth2, Basic, JWT support
-- 🪝 **Webhook Handling** - Built-in webhook verification and routing
-- 🔄 **Standardized Responses** - Consistent response format across all APIs
-- ⚡ **Async Support** - Both sync and async operations
-- 🛡️ **Type Safety** - Full type hints and IDE support
-- 📦 **Framework Agnostic** - Use with Django, Flask, FastAPI, or standalone
-- 🤖 **AI-Powered** - Generate endpoints from documentation using OpenAI
-- 📜 **OpenAPI Support** - Import and use OpenAPI specifications
-
-## Installation
-
-### Basic Installation
-
-```bash
-# Core package (framework-agnostic)
-pip install smart-api-integrations
-```
-
-### Framework-Specific Installation
-
-```bash
-# For Django projects
-pip install smart-api-integrations[django]
-
-# For Flask projects
-pip install smart-api-integrations[flask]
-
-# For FastAPI projects
-pip install smart-api-integrations[fastapi]
-```
-
-### Optional Features
-
-```bash
-# AI-powered endpoint generation
-pip install smart-api-integrations[ai]
-
-# OpenAPI specification support
-pip install smart-api-integrations[openapi]
-
-# Everything included
-pip install smart-api-integrations[all]
-```
-
-## Quick Start
-
-### 1. Install Smart API
-
-```bash
-pip install smart-api-integrations
-```
-
-### 2. Create Your First Provider
-
-```bash
-# Using CLI (recommended)
-smart-api add-provider --name github --base-url https://api.github.com --auth bearer_token
-
-# This creates: providers/github/config.yaml
-```
-
-### 3. Set Environment Variables
-
-```bash
-export GITHUB_TOKEN="your-github-token-here"
-```
-
-### 4. Use the Client
+Integrating 3rd party APIs typically requires:
 
 ```python
-from smart_api_integrations import SmartAPIClient
+# ❌ Lots of boilerplate for each API call
+import requests
 
-# Initialize client
-github = SmartAPIClient('github')
+def get_github_user(username):
+    headers = {'Authorization': f'token {GITHUB_TOKEN}'}
+    response = requests.get(f'https://api.github.com/users/{username}', headers=headers)
+    if response.status_code != 200:
+        raise Exception(f"API error: {response.status_code}")
+    return response.json()
 
-# Make API calls with full IDE support
-user = github.get_user()
-print(f"Logged in as: {user.data['login']}")
+def get_github_repo(owner, repo):
+    headers = {'Authorization': f'token {GITHUB_TOKEN}'}
+    response = requests.get(f'https://api.github.com/repos/{owner}/{repo}', headers=headers)
+    if response.status_code != 200:
+        raise Exception(f"API error: {response.status_code}")
+    return response.json()
 
-repos = github.list_repos(params={'per_page': 10})
-for repo in repos.data:
-    print(f"- {repo['name']}")
+# ... repeat for every endpoint
 ```
 
-## Integration with Existing Projects
+## ✨ The Solution
 
-### Step 1: Install in Your Project
+**Smart API Integrations** eliminates this boilerplate:
+
+1. **Define endpoints once** in a YAML config (manually or AI-generated)
+2. **Get a client class** with intelligent methods
+3. **Generate type stubs** for full IDE support
+
+```python
+# ✅ Zero boilerplate - just use the client
+from smart_api_integrations import GithubAPIClient
+
+github = GithubAPIClient()
+user = github.get_user(username='octocat')           # Full IDE support!
+repo = github.get_repo(owner='octocat', repo='Hello-World')
+```
+
+## 🚀 Quick Start
+
+### 1. Install the Package
 
 ```bash
-cd your-existing-project
 pip install smart-api-integrations
 ```
 
-### Step 2: Create Providers Directory
+### 2. Set Environment Variables
 
 ```bash
-# Create providers directory in your project root
-mkdir -p providers
+export SMART_API_INTEGRATIONS_PROVIDERS_DIR="./providers"
+
+# Authentication tokens (provider-specific environment variables)
+export GITHUB_TOKEN="your_github_token"                    # Bearer token
+export STRIPE_API_KEY="sk_test_your_stripe_key"           # API key
+export MYAPI_USERNAME="your_username"                      # Basic auth
+export MYAPI_PASSWORD="your_password"                      # Basic auth
+export MYAPI_CLIENT_ID="your_client_id"                   # OAuth2 (provider-specific)
+export MYAPI_CLIENT_SECRET="your_client_secret"           # OAuth2 (provider-specific)
+export MYAPI_JWT_TOKEN="your_jwt_token"                   # JWT (provider-specific)
 ```
 
-### Step 3: Add Your First Provider
+### 3. Use Pre-built Providers
 
-```bash
-# Example: Adding Stripe API
-smart-api add-provider \
-  --name stripe \
-  --base-url https://api.stripe.com/v1 \
-  --auth bearer_token \
-  --description "Stripe Payment API"
-```
-
-This creates `providers/stripe/config.yaml`:
-
-```yaml
-name: "stripe"
-base_url: "https://api.stripe.com/v1"
-description: "Stripe Payment API"
-auth:
-  type: "bearer_token"
-  token_value: "${STRIPE_SECRET_KEY}"
-endpoints: {}
-```
-
-### Step 4: Set Environment Variables
-
-```bash
-# Add to your .env file or environment
-export STRIPE_SECRET_KEY="sk_test_your_stripe_key"
-export GITHUB_TOKEN="ghp_your_github_token"
-```
-
-### Step 5: Start Using APIs
+GitHub provider comes pre-configured as an example:
 
 ```python
-from smart_api_integrations import SmartAPIClient
+from smart_api_integrations import GithubAPIClient
 
-# Use any configured provider
-stripe = SmartAPIClient('stripe')
-github = SmartAPIClient('github')
+# Uses GITHUB_TOKEN environment variable automatically
+github = GithubAPIClient()
+user = github.get_user(username='octocat')
+print(f"User: {user.data['name']}")
 
-# Make API calls
-customers = stripe.list_customers()
-user = github.get_user()
+# Or override authentication
+github = GithubAPIClient(token_value='your_custom_token')
 ```
 
-## Adding New Providers
+**Note**: GitHub is provided as a sample provider. For other APIs, follow the workflow below to add your own providers.
 
-### Method 1: Using CLI (Recommended)
+## 🔧 Adding New API Providers
 
-```bash
-# Interactive mode
-smart-api add-provider --name myapi --base-url https://api.example.com --interactive
-
-# Non-interactive with options
-smart-api add-provider \
-  --name shopify \
-  --base-url https://your-shop.myshopify.com/admin/api/2023-04 \
-  --auth api_key \
-  --description "Shopify Admin API"
-```
-
-### Method 2: Manual Configuration
+### Method 1: Manual Configuration
 
 Create `providers/myapi/config.yaml`:
 
 ```yaml
-name: "myapi"
-base_url: "https://api.example.com"
-description: "My Custom API"
-version: "1.0"
-
+name: myapi
+base_url: https://api.myservice.com/v1
+description: My API Service
 auth:
-  type: "bearer_token"  # or api_key, basic, oauth2, jwt, none
-  token_value: "${MYAPI_TOKEN}"
-
-default_headers:
-  Content-Type: "application/json"
-  User-Agent: "MyApp/1.0"
-
+  type: bearer_token
+  token_value: ${MYAPI_TOKEN}
 endpoints:
-  list_items:
-    path: "/items"
-    method: "GET"
-    description: "Get all items"
+  get_user:
+    path: /users/{user_id}
+    method: GET
+    description: Get user by ID
     parameters:
-      page:
-        type: "integer"
-        required: false
-        in: "query"
-      
-  create_item:
-    path: "/items"
-    method: "POST"
-    description: "Create a new item"
-    
-  get_item:
-    path: "/items/{item_id}"
-    method: "GET"
-    description: "Get specific item"
+      user_id: {type: string, required: true, in: path}
+  list_users:
+    path: /users
+    method: GET
+    description: List all users
     parameters:
-      item_id:
-        type: "string"
-        required: true
-        in: "path"
+      page: {type: integer, required: false, in: query}
+      limit: {type: integer, required: false, in: query}
+  create_user:
+    path: /users
+    method: POST
+    description: Create a new user
+    parameters:
+      name: {type: string, required: true, in: body}
+      email: {type: string, required: true, in: body}
 ```
 
-### Authentication Types
+### Method 2: AI-Generated Configuration
 
-Smart API supports multiple authentication methods:
+```bash
+# Generate endpoints from API documentation
+smart-api-integrations add-endpoints myapi \
+    --url "https://docs.myservice.com/api" \
+    --max-endpoints 10
+```
+
+### Method 3: CLI Provider Creation
+
+```bash
+smart-api-integrations add-provider \
+    --name "myapi" \
+    --base-url "https://api.myservice.com/v1" \
+    --auth-type "bearer_token"
+```
+
+## 🎯 Creating Client Classes
+
+### Option 1: Use Universal Client
+
+```python
+from smart_api_integrations import UniversalAPIClient
+
+# Works with any configured provider
+myapi = UniversalAPIClient('myapi')
+user = myapi.get_user(user_id='123')
+users = myapi.list_users(page=1, limit=10)
+new_user = myapi.create_user(name='John', email='john@example.com')
+```
+
+### Option 2: Create Custom Client Class
+
+Create `my_project/clients.py`:
+
+```python
+import os
+from smart_api_integrations.clients.universal import UniversalAPIClient
+
+class MyAPIClient(UniversalAPIClient):
+    """Custom client for MyAPI with additional business logic."""
+    
+    def __init__(self, **auth_overrides):
+        # Handle authentication based on your provider's auth type
+        if 'token_value' not in auth_overrides:
+            token = os.getenv('MYAPI_TOKEN')  # Bearer token
+            if token:
+                auth_overrides['token_value'] = token
+        
+        # For API key auth, use:
+        # if 'api_key_value' not in auth_overrides:
+        #     auth_overrides['api_key_value'] = os.getenv('MYAPI_KEY')
+        
+        super().__init__('myapi', **auth_overrides)
+    
+    def get_active_users(self):
+        """Get only active users - custom business logic."""
+        all_users = self.list_users()
+        if all_users.success:
+            return [user for user in all_users.data if user.get('status') == 'active']
+        return []
+    
+    def create_user_with_validation(self, name: str, email: str):
+        """Create user with email validation."""
+        if '@' not in email:
+            raise ValueError("Invalid email address")
+        return self.create_user(name=name, email=email)
+
+# Usage
+from my_project.clients import MyAPIClient
+
+api = MyAPIClient()  # Uses MYAPI_TOKEN automatically
+active_users = api.get_active_users()
+new_user = api.create_user_with_validation('John', 'john@example.com')
+```
+
+### Option 3: Generate Dedicated Client Class
+
+```bash
+# Generate a dedicated client class file
+smart-api-integrations generate-client myapi \
+    --output-file "./my_project/myapi_client.py" \
+    --class-name "MyAPIClient"
+```
+
+This creates a standalone client class:
+
+```python
+# Auto-generated my_project/myapi_client.py
+import os
+from typing import Optional, Dict, Any
+from smart_api_integrations.clients.universal import UniversalAPIClient
+from smart_api_integrations.core.schema import APIResponse
+
+class MyAPIClient(UniversalAPIClient):
+    def __init__(self, **auth_overrides):
+        """
+        Initialize the myapi API client.
+        
+        Args:
+            **auth_overrides: Authentication overrides
+                            If not provided, reads from environment variables
+        """
+        # Set default authentication from environment if not provided
+        if 'token_value' not in auth_overrides:
+            token = os.getenv('MYAPI_TOKEN')
+            if token:
+                auth_overrides['token_value'] = token
+            else:
+                raise ValueError("myapi token required. Set MYAPI_TOKEN environment variable or pass token_value.")
+        super().__init__('myapi', **auth_overrides)
+    
+    def get_user(self, user_id: str) -> APIResponse:
+        """Get user by ID."""
+        return self._client.call_endpoint('get_user', params={'user_id': user_id})
+    
+    def list_users(self, page: int = None, limit: int = None) -> APIResponse:
+        """List all users."""
+        params = {}
+        if page is not None:
+            params['page'] = page
+        if limit is not None:
+            params['limit'] = limit
+        return self._client.call_endpoint('list_users', params=params)
+    
+    def create_user(self, name: str, email: str) -> APIResponse:
+        """Create a new user."""
+        return self._client.call_endpoint('create_user', json_data={'name': name, 'email': email})
+```
+
+## 🛡️ Type Safety & IDE Support
+
+### Generate Type Stubs
+
+```bash
+# Generate type stubs for full IDE support
+smart-api-integrations generate-type-stubs myapi \
+    --output-dir "./typings"
+```
+
+This creates `typings/myapi.pyi`:
+
+```python
+# Auto-generated type stubs
+from smart_api_integrations.core.schema import APIResponse
+
+class MyAPIClient:
+    def get_user(self, user_id: str) -> APIResponse: ...
+    def list_users(self, page: int = None, limit: int = None) -> APIResponse: ...
+    def create_user(self, name: str, email: str) -> APIResponse: ...
+```
+
+### Using with Full IDE Support
+
+```python
+from smart_api_integrations import UniversalAPIClient
+
+myapi = UniversalAPIClient('myapi')
+
+# IDE will show:
+# - Method suggestions: get_user, list_users, create_user
+# - Parameter hints: user_id (required), page (optional), etc.
+# - Return type: APIResponse
+user = myapi.get_user(user_id='123')  # Full autocomplete!
+```
+
+## 🔧 Parameter Intelligence
+
+The framework automatically handles different parameter types:
+
+```python
+# Path parameters (go in URL)
+user = api.get_user(user_id='123')  # → GET /users/123
+
+# Query parameters (go in URL query string)  
+users = api.list_users(page=2, limit=50)  # → GET /users?page=2&limit=50
+
+# Body parameters (go in JSON body)
+new_user = api.create_user(name='John', email='john@example.com')
+# → POST /users with body: {"name": "John", "email": "john@example.com"}
+
+# Mixed parameters (automatically separated)
+result = api.update_user(
+    user_id='123',        # → path parameter
+    name='John Smith',    # → body parameter
+    notify=True          # → query parameter
+)
+# → PUT /users/123?notify=true with body: {"name": "John Smith"}
+```
+
+## 📖 Real-World Example: Stripe Integration
+
+### 1. Create Configuration
 
 ```yaml
-# Bearer Token (GitHub, OpenAI, etc.)
+# providers/stripe/config.yaml
+name: stripe
+base_url: https://api.stripe.com/v1
 auth:
-  type: "bearer_token"
-  token_value: "${API_TOKEN}"
-
-# API Key in Header
-auth:
-  type: "api_key"
-  api_key_header: "X-API-Key"
-  api_key_value: "${API_KEY}"
-
-# API Key in Query Parameter
-auth:
-  type: "api_key"
-  api_key_param: "api_key"
-  api_key_value: "${API_KEY}"
-
-# Basic Authentication
-auth:
-  type: "basic"
-  username: "${API_USERNAME}"
-  password: "${API_PASSWORD}"
-
-# OAuth2 Client Credentials
-auth:
-  type: "oauth2"
-  oauth2_client_id: "${CLIENT_ID}"
-  oauth2_client_secret: "${CLIENT_SECRET}"
-  oauth2_token_url: "https://api.example.com/oauth/token"
-
-# JWT Token
-auth:
-  type: "jwt"
-  jwt_token: "${JWT_TOKEN}"
-
-# No Authentication
-auth:
-  type: "none"
+  type: bearer_token
+  token_value: ${STRIPE_API_KEY}
+endpoints:
+  list_customers:
+    path: /customers
+    method: GET
+    parameters:
+      limit: {type: integer, required: false, in: query}
+  create_customer:
+    path: /customers
+    method: POST
+    parameters:
+      email: {type: string, required: true, in: body}
+      name: {type: string, required: false, in: body}
+  get_customer:
+    path: /customers/{customer_id}
+    method: GET
+    parameters:
+      customer_id: {type: string, required: true, in: path}
 ```
 
-### Auto-Generate Endpoints
+### 2. Generate Type Stubs
 
 ```bash
-# From OpenAPI specification
-smart-api add-endpoints --provider myapi --spec openapi.yaml
-
-# Using AI (requires openai package)
-smart-api add-endpoints --provider github --url https://docs.github.com/en/rest
-
-# Add example endpoints
-smart-api add-endpoints --provider myapi
+smart-api-integrations generate-type-stubs stripe
 ```
 
-## Adding Webhooks
-
-### Step 1: Create Webhook Configuration
-
-Create `providers/stripe/webhook.yaml`:
-
-```yaml
-provider: "stripe"
-webhooks:
-  payment_intent.succeeded:
-    description: "Payment completed successfully"
-    verification:
-      type: "stripe_signature"
-      secret: "${STRIPE_WEBHOOK_SECRET}"
-      
-  customer.created:
-    description: "New customer created"
-    verification:
-      type: "stripe_signature"
-      secret: "${STRIPE_WEBHOOK_SECRET}"
-
-security:
-  allowed_ips: []  # Empty = allow all
-  require_https: true
-  max_age_seconds: 300
-```
-
-### Step 2: Create Webhook Handlers
+### 3. Create Custom Client
 
 ```python
-from smart_api_integrations.webhooks import webhook_handler
+# my_project/stripe_client.py
+from smart_api_integrations import UniversalAPIClient
 
-@webhook_handler('stripe', 'payment_intent.succeeded')
-def handle_payment_success(event):
-    """Handle successful payment."""
-    payment = event.payload['data']['object']
-    amount = payment['amount'] / 100
+class StripeClient(UniversalAPIClient):
+    def __init__(self):
+        super().__init__('stripe')
     
-    print(f"Payment of ${amount} succeeded!")
+    def find_customer_by_email(self, email: str):
+        """Find customer by email address."""
+        customers = self.list_customers()
+        if customers.success:
+            for customer in customers.data['data']:
+                if customer.get('email') == email:
+                    return customer
+        return None
     
-    # Your business logic here
-    # - Update database
-    # - Send confirmation email
-    # - Trigger fulfillment
-    
-    return {'processed': True, 'payment_id': payment['id']}
-
-@webhook_handler('stripe', 'customer.created')
-def handle_new_customer(event):
-    """Handle new customer creation."""
-    customer = event.payload['data']['object']
-    
-    print(f"New customer: {customer['email']}")
-    
-    # Your business logic here
-    # - Add to CRM
-    # - Send welcome email
-    # - Set up onboarding
-    
-    return {'processed': True, 'customer_id': customer['id']}
+    def create_customer_safe(self, email: str, name: str = None):
+        """Create customer only if email doesn't exist."""
+        existing = self.find_customer_by_email(email)
+        if existing:
+            return {'exists': True, 'customer': existing}
+        
+        result = self.create_customer(email=email, name=name)
+        return {'exists': False, 'customer': result.data if result.success else None}
 ```
 
-### Step 3: Test Webhooks
-
-```bash
-# Test webhook handlers
-smart-api test-webhook --provider stripe --webhook payment_intent.succeeded
-
-# Test with custom payload
-smart-api test-webhook --provider stripe --webhook customer.created --payload '{"data": {"object": {"id": "cus_123", "email": "test@example.com"}}}'
-```
-
-## Framework Integration
-
-### Django Integration
-
-#### 1. Add to settings.py
+### 4. Use with Full IDE Support
 
 ```python
-INSTALLED_APPS = [
-    # ... your apps
-    'smart_api_integrations',
-]
+from my_project.stripe_client import StripeClient
 
-# Optional: Configure Smart API
-SMART_API_INTEGRATIONS_PROVIDERS_DIR = BASE_DIR / 'providers'
-SMART_API_INTEGRATIONS_AUTO_DISCOVER_WEBHOOKS = True
+stripe = StripeClient()
+
+# Full autocomplete and type checking!
+customers = stripe.list_customers(limit=10)
+new_customer = stripe.create_customer(email='john@example.com', name='John Doe')
+customer = stripe.get_customer(customer_id='cus_123')
+
+# Custom methods
+safe_result = stripe.create_customer_safe('jane@example.com', 'Jane Doe')
 ```
 
-#### 2. Add to urls.py
-
-```python
-from django.urls import path, include
-from smart_api_integrations.frameworks.django import get_django_urls
-
-urlpatterns = [
-    # ... your URLs
-    path('api/webhooks/', include(get_django_urls())),
-]
-```
-
-#### 3. Use in views
-
-```python
-from django.http import JsonResponse
-from smart_api_integrations import SmartAPIClient
-
-def my_view(request):
-    github = SmartAPIClient('github')
-    user = github.get_user()
-    
-    return JsonResponse({
-        'user': user.data,
-        'status': user.status_code
-    })
-```
-
-#### 4. Management Commands
-
-```bash
-# Django management commands are automatically available
-python manage.py add_provider --name myapi --base-url https://api.example.com
-python manage.py test_webhook --provider stripe --webhook payment_intent.succeeded
-```
-
-### Flask Integration
-
-#### 1. Initialize Flask App
-
-```python
-from flask import Flask
-from smart_api_integrations.frameworks.flask import init_flask_app
-
-app = Flask(__name__)
-
-# Initialize Smart API
-init_flask_app(app, url_prefix='/api')
-
-@app.route('/github-user')
-def github_user():
-    from smart_api_integrations import SmartAPIClient
-    github = SmartAPIClient('github')
-    user = github.get_user()
-    return {'user': user.data}
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
-
-#### 2. Manual Blueprint Registration
-
-```python
-from flask import Flask
-from smart_api_integrations.frameworks.flask import create_flask_blueprint
-
-app = Flask(__name__)
-
-# Create and register webhook blueprint
-webhook_bp = create_flask_blueprint()
-app.register_blueprint(webhook_bp, url_prefix='/api')
-```
-
-#### 3. Flask CLI Commands
-
-```bash
-# Flask CLI commands (if flask-cli is installed)
-flask add-provider --name myapi --base-url https://api.example.com
-flask test-webhook --provider stripe --webhook payment_intent.succeeded
-```
-
-### FastAPI Integration
-
-#### 1. Add to FastAPI App
-
-```python
-from fastapi import FastAPI
-from smart_api_integrations.frameworks.fastapi import create_fastapi_router
-from smart_api_integrations import SmartAPIClient
-
-app = FastAPI()
-
-# Include webhook router
-webhook_router = create_fastapi_router()
-app.include_router(webhook_router, prefix="/api")
-
-@app.get("/github-user")
-async def get_github_user():
-    github = SmartAPIClient('github')
-    user = github.get_user()
-    return {"user": user.data}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-```
-
-#### 2. Async Support (Coming Soon)
-
-```python
-# Future async support
-@app.get("/github-repos")
-async def get_repos():
-    github = AsyncSmartAPIClient('github')
-    repos = await github.list_repos()
-    return {"repos": repos.data}
-```
-
-### Standalone Usage (No Framework)
-
-```python
-from smart_api_integrations import SmartAPIClient
-from smart_api_integrations.webhooks.base import BaseWebhookHandler, SimpleWebhookRequest
-import json
-
-# Use API clients
-github = SmartAPIClient('github')
-stripe = SmartAPIClient('stripe')
-
-# Process webhooks manually
-webhook_handler = BaseWebhookHandler()
-
-def process_webhook(provider, webhook_name, body, headers):
-    request = SimpleWebhookRequest(
-        body=body.encode('utf-8'),
-        headers=headers,
-        method='POST'
-    )
-    
-    response = webhook_handler.process_webhook(request, provider, webhook_name)
-    return response.data, response.status_code
-```
-
-## CLI Commands
-
-Smart API provides a comprehensive CLI for managing providers and webhooks:
+## 🛠️ CLI Reference
 
 ### Provider Management
-
 ```bash
-# List all providers
-smart-api list-providers
-
 # Add new provider
-smart-api add-provider --name myapi --base-url https://api.example.com --auth bearer_token
+smart-api-integrations add-provider --name myapi --base-url https://api.example.com
 
-# Interactive provider creation
-smart-api add-provider --name myapi --base-url https://api.example.com --interactive
+# Generate endpoints from documentation  
+smart-api-integrations add-endpoints myapi --url https://docs.example.com/api
+
+# List all providers
+smart-api-integrations list-providers
 ```
 
-### Endpoint Management
+### Code Generation
+```bash
+# Generate type stubs for IDE support
+smart-api-integrations generate-type-stubs myapi
+
+# Generate dedicated client class
+smart-api-integrations generate-client myapi --output-file ./clients/myapi.py
+
+# Test provider configuration
+smart-api-integrations test myapi --endpoint get_user
+```
+
+## 🔐 Authentication Types
+
+Smart API Integrations supports all common authentication methods with automatic environment variable handling.
+
+### Environment Variable Naming Convention
+
+All environment variables follow the pattern `{PROVIDER_NAME}_{AUTH_FIELD}`:
+
+| Auth Type | Environment Variables | Override Parameters |
+|-----------|----------------------|-------------------|
+| Bearer Token | `{PROVIDER}_TOKEN` | `token_value` |
+| API Key | `{PROVIDER}_API_KEY` | `api_key_value` |
+| Basic Auth | `{PROVIDER}_USERNAME`, `{PROVIDER}_PASSWORD` | `username`, `password` |
+| OAuth2 | `{PROVIDER}_CLIENT_ID`, `{PROVIDER}_CLIENT_SECRET` | `oauth2_client_id`, `oauth2_client_secret` |
+| JWT | `{PROVIDER}_JWT_TOKEN` | `jwt_token` |
+
+**Examples**: `GITHUB_TOKEN`, `STRIPE_API_KEY`, `MYAPI_CLIENT_ID`, `SALESFORCE_JWT_TOKEN`
+
+### Real-World Examples
 
 ```bash
-# Add example endpoints
-smart-api add-endpoints --provider myapi
-
-# Generate from OpenAPI spec
-smart-api add-endpoints --provider myapi --spec openapi.yaml
-
-# Generate using AI (requires [ai] extra)
-smart-api add-endpoints --provider github --url https://docs.github.com/en/rest
+# Different providers, different auth types
+export GITHUB_TOKEN="ghp_your_github_token"                    # GitHub: Bearer token
+export STRIPE_API_KEY="sk_test_your_stripe_key"               # Stripe: API key
+export SALESFORCE_CLIENT_ID="your_salesforce_client_id"       # Salesforce: OAuth2
+export SALESFORCE_CLIENT_SECRET="your_salesforce_secret"      # Salesforce: OAuth2
+export FIREBASE_JWT_TOKEN="your_firebase_jwt"                 # Firebase: JWT
+export TWILIO_USERNAME="your_twilio_sid"                      # Twilio: Basic auth
+export TWILIO_PASSWORD="your_twilio_auth_token"               # Twilio: Basic auth
 ```
 
-### Webhook Testing
+```python
+# Each client automatically uses its provider-specific environment variables
+github = GithubAPIClient()        # Uses GITHUB_TOKEN
+stripe = StripeAPIClient()        # Uses STRIPE_API_KEY
+salesforce = SalesforceAPIClient() # Uses SALESFORCE_CLIENT_ID + SALESFORCE_CLIENT_SECRET
+firebase = FirebaseAPIClient()    # Uses FIREBASE_JWT_TOKEN
+twilio = TwilioAPIClient()        # Uses TWILIO_USERNAME + TWILIO_PASSWORD
 
-```bash
-# Test webhook with default payload
-smart-api test-webhook --provider stripe --webhook payment_intent.succeeded
-
-# Test with custom payload
-smart-api test-webhook --provider stripe --webhook customer.created --payload '{"test": "data"}'
+# Or override any authentication
+github = GithubAPIClient(token_value='custom_token')
+salesforce = SalesforceAPIClient(
+    oauth2_client_id='custom_id',
+    oauth2_client_secret='custom_secret'
+)
 ```
 
-### Utility Commands
-
-```bash
-# Check available dependencies
-smart-api check-deps
-
-# Show version
-smart-api --version
-```
-
-## Advanced Features
-
-### Environment Variable Support
-
-All configuration values support environment variable substitution:
-
+### Bearer Token (GitHub, OpenAI, etc.)
 ```yaml
+# Provider config
 auth:
-  type: "bearer_token"
-  token_value: "${API_TOKEN}"  # Will use $API_TOKEN environment variable
-
-base_url: "${API_BASE_URL:-https://api.example.com}"  # With default value
+  type: bearer_token
+  token_value: ${GITHUB_TOKEN}
 ```
 
-### Custom Headers and Timeouts
+```bash
+# Environment variable
+export GITHUB_TOKEN="ghp_your_github_token"
+```
 
+```python
+# Usage - automatically uses GITHUB_TOKEN
+github = GithubAPIClient()
+
+# Or override
+github = GithubAPIClient(token_value='custom_token')
+```
+
+### API Key in Header (Stripe, etc.)
 ```yaml
-default_headers:
-  User-Agent: "MyApp/1.0"
-  Accept: "application/json"
+# Provider config
+auth:
+  type: api_key
+  key_name: Authorization
+  key_value: Bearer ${STRIPE_API_KEY}
+```
 
-default_timeout: 30.0  # seconds
+```bash
+# Environment variable
+export STRIPE_API_KEY="sk_test_your_stripe_key"
+```
 
+```python
+# Usage - automatically uses STRIPE_API_KEY
+stripe = StripeAPIClient()
+
+# Or override
+stripe = StripeAPIClient(api_key_value='sk_test_custom_key')
+```
+
+### API Key in Query (OpenWeatherMap, etc.)
+```yaml
+# Provider config
+auth:
+  type: api_key
+  key_name: appid
+  key_value: ${OPENWEATHERMAP_API_KEY}
+  location: query
+```
+
+```bash
+# Environment variable
+export OPENWEATHERMAP_API_KEY="your_api_key"
+```
+
+### Basic Authentication
+```yaml
+# Provider config
+auth:
+  type: basic
+  username: ${MYAPI_USERNAME}
+  password: ${MYAPI_PASSWORD}
+```
+
+```bash
+# Environment variables
+export MYAPI_USERNAME="your_username"
+export MYAPI_PASSWORD="your_password"
+```
+
+```python
+# Usage - automatically uses environment variables
+api = MyAPIClient()
+
+# Or override
+api = MyAPIClient(username='custom_user', password='custom_pass')
+```
+
+### OAuth2 Client Credentials
+```yaml
+# Provider config
+auth:
+  type: oauth2
+  oauth2_client_id: ${MYAPI_CLIENT_ID}
+  oauth2_client_secret: ${MYAPI_CLIENT_SECRET}
+  oauth2_token_url: https://api.service.com/oauth/token
+```
+
+```bash
+# Environment variables (provider-specific)
+export MYAPI_CLIENT_ID="your_client_id"
+export MYAPI_CLIENT_SECRET="your_client_secret"
+```
+
+```python
+# Usage - automatically uses MYAPI_CLIENT_ID and MYAPI_CLIENT_SECRET
+api = MyAPIClient()
+
+# Or override
+api = MyAPIClient(
+    oauth2_client_id='custom_client_id',
+    oauth2_client_secret='custom_client_secret'
+)
+```
+
+### JWT Token
+```yaml
+# Provider config
+auth:
+  type: jwt
+  jwt_token: ${MYAPI_JWT_TOKEN}
+```
+
+```bash
+# Environment variable (provider-specific)
+export MYAPI_JWT_TOKEN="your_jwt_token"
+```
+
+```python
+# Usage - automatically uses MYAPI_JWT_TOKEN
+api = MyAPIClient()
+
+# Or override
+api = MyAPIClient(jwt_token='custom_jwt_token')
+```
+
+### 🔑 Authentication Summary
+
+✅ **Provider-Specific**: Each provider uses its own environment variables  
+✅ **Override Support**: All auth parameters can be overridden during initialization  
+✅ **Multiple Auth Types**: Bearer Token, API Key, Basic Auth, OAuth2, JWT  
+✅ **Automatic Detection**: Auth type determined from provider configuration  
+✅ **IDE Support**: Full type hints for all authentication parameters
+
+## 🔄 Complete Workflow
+
+Here's the complete workflow for adding a new API provider:
+
+### 1. Add Provider Configuration
+
+```bash
+# Option A: Manual configuration
+mkdir -p providers/myapi
+cat > providers/myapi/config.yaml << EOF
+name: myapi
+base_url: https://api.myservice.com/v1
+description: My API Service
+auth:
+  type: bearer_token
+  token_value: \${MYAPI_TOKEN}
 endpoints:
-  slow_endpoint:
-    path: "/slow"
-    method: "GET"
-    timeout: 60.0  # Override default timeout
+  get_user:
+    path: /users/{user_id}
+    method: GET
+    parameters:
+      user_id: {type: string, required: true, in: path}
+EOF
+
+# Option B: Use CLI to generate from docs
+smart-api-integrations add-endpoints myapi --url "https://docs.myservice.com/api" --max-endpoints 10
 ```
 
-### Rate Limiting and Retries
+### 2. Set Authentication
 
-```yaml
-rate_limit:
-  requests_per_second: 10
-  burst_limit: 20
-
-retry:
-  max_retries: 3
-  backoff_factor: 0.3
-  retry_on_status: [429, 500, 502, 503, 504]
+```bash
+# Set environment variables based on auth type (provider-specific)
+export MYAPI_TOKEN="your_api_token"                    # For bearer_token
+# export MYAPI_API_KEY="your_key"                      # For api_key
+# export MYAPI_USERNAME="user"                         # For basic auth
+# export MYAPI_PASSWORD="pass"                         # For basic auth
+# export MYAPI_CLIENT_ID="client_id"                   # For oauth2
+# export MYAPI_CLIENT_SECRET="client_secret"           # For oauth2
+# export MYAPI_JWT_TOKEN="jwt_token"                   # For jwt
 ```
 
-### Type Safety
+### 3. Generate Client Class
 
-Smart API provides full type hints for better IDE support:
+```bash
+# Generate a dedicated client class
+smart-api-integrations generate-client myapi \
+    --class-name "MyAPIClient" \
+    --output-file "./clients/myapi_client.py"
+```
+
+### 4. Generate Type Stubs (Optional)
+
+```bash
+# Generate type stubs for IDE support
+smart-api-integrations generate-type-stubs --provider myapi --output-dir "./typings"
+
+# For the GitHub sample provider:
+smart-api-integrations generate-type-stubs --provider github --output-dir "./typings"
+```
+
+### 5. Use the Client
 
 ```python
-from smart_api_integrations import SmartAPIClient
-from smart_api_integrations.core import APIResponse
+from clients.myapi_client import MyAPIClient
 
-github: SmartAPIClient = SmartAPIClient('github')
-response: APIResponse = github.get_user()
+# Automatically uses provider-specific environment variables
+client = MyAPIClient()  # Uses MYAPI_TOKEN (or MYAPI_CLIENT_ID + MYAPI_CLIENT_SECRET for OAuth2)
 
-# Full autocomplete and type checking
-user_login: str = response.data['login']
-status_code: int = response.status_code
+# Or override authentication (works for all auth types)
+client = MyAPIClient(token_value='custom_token')                    # Bearer token override
+# client = MyAPIClient(api_key_value='custom_key')                 # API key override
+# client = MyAPIClient(username='user', password='pass')           # Basic auth override
+# client = MyAPIClient(                                            # OAuth2 override
+#     oauth2_client_id='custom_id',
+#     oauth2_client_secret='custom_secret'
+# )
+# client = MyAPIClient(jwt_token='custom_jwt')                     # JWT override
+
+# Make API calls with full IDE support
+user = client.get_user(user_id='123')
+print(f"User: {user.data['name']}")
 ```
 
-## Examples
+## 📦 Local Development Setup
 
-### Complete E-commerce Integration
+### 1. Install for Development
+
+```bash
+# Install the package in development mode
+git clone https://github.com/yourusername/smart-api-integrations.git
+cd smart-api-integrations
+pip install -e .
+```
+
+### 2. Create Your Project Structure
+
+```
+my_project/
+├── providers/           # API configurations
+│   ├── myapi/
+│   │   └── config.yaml
+│   └── stripe/
+│       └── config.yaml
+├── clients/             # Custom client classes
+│   ├── __init__.py
+│   ├── myapi_client.py
+│   └── stripe_client.py
+├── typings/             # Generated type stubs
+│   ├── myapi.pyi
+│   └── stripe.pyi
+└── main.py             # Your application
+```
+
+### 3. Environment Configuration
+
+```bash
+# .env file
+SMART_API_INTEGRATIONS_PROVIDERS_DIR="./providers"
+GITHUB_TOKEN="your_github_token"
+STRIPE_API_KEY="your_stripe_key"
+MYAPI_TOKEN="your_api_token"
+```
+
+### 4. Use in Your Application
 
 ```python
-from smart_api_integrations import SmartAPIClient
-from smart_api_integrations.webhooks import webhook_handler
+# main.py
+import os
+from dotenv import load_dotenv
+from clients.myapi_client import MyAPIClient
+from clients.stripe_client import StripeClient
+
+load_dotenv()
 
 # Initialize clients
-stripe = SmartAPIClient('stripe')
-shopify = SmartAPIClient('shopify')
-mailchimp = SmartAPIClient('mailchimp')
+myapi = MyAPIClient()
+stripe = StripeClient()
 
-@webhook_handler('stripe', 'payment_intent.succeeded')
-def handle_payment(event):
-    payment = event.payload['data']['object']
-    
-    # 1. Update order in Shopify
-    order = shopify.get_order(payment['metadata']['order_id'])
-    shopify.update_order(order['id'], {'financial_status': 'paid'})
-    
-    # 2. Add customer to email list
-    customer_email = payment['receipt_email']
-    mailchimp.add_subscriber('customers', {'email': customer_email})
-    
-    # 3. Send confirmation
-    send_order_confirmation(payment['metadata']['order_id'])
-    
-    return {'processed': True}
-
-def create_subscription(customer_email, plan_id):
-    """Create a subscription across multiple services."""
-    
-    # Create customer in Stripe
-    customer = stripe.create_customer({
-        'email': customer_email,
-        'description': 'Subscription customer'
-    })
-    
-    # Create subscription
-    subscription = stripe.create_subscription({
-        'customer': customer.data['id'],
-        'items': [{'price': plan_id}]
-    })
-    
-    # Add to email marketing
-    mailchimp.add_subscriber('subscribers', {
-        'email': customer_email,
-        'tags': ['subscriber', f'plan_{plan_id}']
-    })
-    
-    return subscription.data
+# Use with full IDE support
+users = myapi.list_users(limit=10)
+customers = stripe.list_customers(limit=5)
 ```
 
-### Multi-API Data Sync
+## 🧪 Testing Your Integration
 
 ```python
-def sync_customer_data():
-    """Sync customer data across multiple platforms."""
+# Test your custom client
+def test_myapi_integration():
+    client = MyAPIClient()
     
-    # Get customers from Stripe
-    stripe_customers = stripe.list_customers()
+    # Test endpoint availability
+    methods = client.list_available_methods()
+    assert 'get_user' in methods
     
-    for customer in stripe_customers.data:
-        # Check if exists in CRM
-        crm_contact = hubspot.search_contacts(customer['email'])
-        
-        if not crm_contact.data['results']:
-            # Create in HubSpot
-            hubspot.create_contact({
-                'email': customer['email'],
-                'firstname': customer.get('name', '').split(' ')[0],
-                'stripe_customer_id': customer['id']
-            })
-        
-        # Add to email list if not exists
-        try:
-            mailchimp.add_subscriber('all_customers', {
-                'email': customer['email'],
-                'status': 'subscribed'
-            })
-        except Exception:
-            pass  # Already exists
-```
-
-## Project Structure
-
-When using Smart API in your project, organize it like this:
-
-```
-your-project/
-├── providers/                    # API configurations
-│   ├── github/
-│   │   ├── config.yaml          # API endpoints
-│   │   └── webhook.yaml         # Webhook config
-│   ├── stripe/
-│   │   ├── config.yaml
-│   │   └── webhook.yaml
-│   └── shopify/
-│       └── config.yaml
-├── webhooks/                     # Webhook handlers
-│   ├── __init__.py
-│   ├── stripe_handlers.py
-│   ├── github_handlers.py
-│   └── shopify_handlers.py
-├── services/                     # Business logic
-│   ├── payment_service.py
-│   └── order_service.py
-├── .env                         # Environment variables
-└── requirements.txt
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Provider not found**
-   ```bash
-   # Make sure providers directory exists and has config.yaml
-   ls -la providers/myapi/
-   ```
-
-2. **Authentication errors**
-   ```bash
-   # Check environment variables
-   echo $GITHUB_TOKEN
-   echo $STRIPE_SECRET_KEY
-   ```
-
-3. **Webhook signature verification fails**
-   ```bash
-   # Verify webhook secret is correct
-   smart-api test-webhook --provider stripe --webhook payment_intent.succeeded
-   ```
-
-4. **Import errors**
-   ```bash
-   # Check dependencies
-   smart-api check-deps
-   pip install smart-api-integrations[all]
-   ```
-
-### Debug Mode
-
-Enable debug logging:
-
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
-from smart_api_integrations import SmartAPIClient
-github = SmartAPIClient('github')
-```
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/behera116/smart-api-integrations.git
-cd smart-api-integrations
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install in development mode
-pip install -e ".[dev]"
+    # Test actual API call (with real token)
+    user = client.get_user(user_id='test_user')
+    assert user.success
+    assert 'name' in user.data
 
 # Run tests
-pytest
-
-# Run linting
-black src
-flake8 src
-mypy src
+pytest tests/
 ```
 
-## License
+## 🎯 Key Benefits
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- ✅ **Zero Boilerplate**: Define endpoints once, use everywhere
+- ✅ **Type Safety**: Full IDE support with generated type stubs  
+- ✅ **Intelligent Parameters**: Automatic routing of path/query/body parameters
+- ✅ **Custom Logic**: Easy to extend with business-specific methods
+- ✅ **Production Ready**: Built-in error handling, retries, rate limiting
+- ✅ **AI Assistance**: Generate endpoints from documentation URLs
 
-## Support
+## 📄 License
 
-- 📧 Email: behera.anand1@gmail.com
-- 🐛 Issues: [GitHub Issues](https://github.com/behera116/smart-api-integrations/issues)
-- 📖 Documentation: [Full Documentation](https://smart-api-integrations.readthedocs.io)
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
+## 🆘 Support
 
-Smart API Integrations was inspired by the need for a simple, yet powerful way to integrate with multiple APIs without writing boilerplate code. Special thanks to the open-source community for their contributions and feedback.
+- **Documentation**: [Integration Guide](docs/new_provider_integration_guide.md)
+- **Examples**: [examples/](examples/) directory
+- **Issues**: [GitHub Issues](https://github.com/yourusername/smart-api-integrations/issues)
+
+---
+
+**Stop writing API boilerplate. Start building features.** 🚀
+
+```bash
+pip install smart-api-integrations
+```
