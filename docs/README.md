@@ -27,8 +27,9 @@ Welcome to the Smart API Integrations documentation! This system eliminates API 
 
 ### 🛠️ Advanced Usage
 - **[CLI Reference](cli-reference.md)** - Complete command-line interface documentation
-- **[Configuration Reference](configuration-reference.md)** - YAML configuration options
-- **[Best Practices](best-practices.md)** - Recommended patterns and practices
+- **[Provider Priority Guide](provider-priority-guide.md)** - How provider resolution and overrides work
+- **[Package Setup Guide](package-setup-guide.md)** - Package structure and development setup
+- **[Publishing Guide](publishing-guide.md)** - How to publish and distribute the package
 
 ### 🎯 Examples & Tutorials
 - **[Real-World Examples](examples/README.md)** - Complete integration examples

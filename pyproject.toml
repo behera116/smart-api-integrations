@@ -97,7 +97,7 @@ smart-api-integrations = "smart_api_integrations.cli.main:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-smart_api_integrations = ["py.typed", "templates/*", "**/*.yaml", "**/*.yml"]
+smart_api_integrations = ["py.typed", "templates/*", "providers/**/*.yaml", "providers/**/*.yml"]
 
 [tool.black]
 line-length = 88

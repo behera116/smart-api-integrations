@@ -15,9 +15,9 @@ recursive-include examples *.md
 recursive-include examples *.yml
 recursive-include examples *.yaml
 
-# Provider configurations
-recursive-include providers *.yml
-recursive-include providers *.yaml
+# Provider configurations (included in package)
+recursive-include src/smart_api_integrations/providers *.yml
+recursive-include src/smart_api_integrations/providers *.yaml
 
 # Source code
 recursive-include src *.py

@@ -28,7 +28,7 @@ class ConfigLoader:
             if env_providers_dir:
                 self.providers_directory = Path(env_providers_dir)
             else:
-                # Default to providers directory relative to this file
+                # Default to providers directory within the package
                 current_dir = Path(__file__).parent.parent
                 self.providers_directory = current_dir / "providers"
     
