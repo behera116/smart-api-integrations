@@ -1,64 +1,42 @@
-# 📚 Smart API Integrations Documentation
+# Smart API Integrations Documentation
 
-Welcome to the Smart API Integrations documentation! This system eliminates API integration boilerplate by providing intelligent client classes and standardized webhook handling.
+Welcome to the Smart API Integrations documentation. This library helps you connect to any API and handle webhooks with minimal code.
 
-## 🎯 Why Smart API Integrations?
+## Documentation Overview
 
-**The Problem**: Traditional API integrations require repetitive boilerplate code, manual parameter handling, and provider-specific webhook implementations.
+- [Documentation Structure](documentation-structure.md) - Overview of the documentation organization
 
-**The Solution**: Define endpoints once in YAML, get intelligent client classes with full IDE support, plus standardized webhook handling across providers.
+## Getting Started
 
-## 📖 Documentation Structure
+- [Quick Start Guide](quick-start-guide.md) - Get up and running quickly
+- [API Client Guide](api-client-guide.md) - Learn how to use API clients
+- [Webhook Integration](webhook_integration.md) - Learn how to handle webhooks
 
-### 🚀 Getting Started
-- **[Quick Start Guide](quick-start-guide.md)** - Get up and running in 5 minutes
-- **[Installation & Setup](installation-setup.md)** - Detailed installation and environment setup
+## API Integration
 
-### 🔌 API Client Integration
-- **[API Client Guide](api-client-guide.md)** - Complete guide to using API clients
-- **[Adding New Providers](adding-new-providers.md)** - How to integrate new API providers
-- **[Authentication Guide](authentication-guide.md)** - All supported authentication methods
-- **[Type Safety & IDE Support](type-safety-guide.md)** - Generate type stubs for full IDE support
+- [Adding New Providers](adding-new-providers.md) - Add new API providers
+- [OpenAPI Integration](openapi_integration.md) - Use OpenAPI specifications
+- [Type Safety Guide](type-safety-guide.md) - Use type hints and stubs
 
-### 🪝 Webhook System
-- **[Webhook System Overview](webhook-system-overview.md)** - Why our webhook system is valuable
-- **[Webhook Handler Guide](webhook-handler-guide.md)** - Create and manage webhook handlers
-- **[Framework Integration](framework-integration-guide.md)** - Flask, FastAPI, and Django integration
+## Webhook Integration
 
-### 🛠️ Advanced Usage
-- **[CLI Reference](cli-reference.md)** - Complete command-line interface documentation
-- **[Provider Priority Guide](provider-priority-guide.md)** - How provider resolution and overrides work
-- **[Package Setup Guide](package-setup-guide.md)** - Package structure and development setup
-- **[Publishing Guide](publishing-guide.md)** - How to publish and distribute the package
+- [Webhook System Overview](webhook-system-overview.md) - How the webhook system works
+- [Webhook Handler Guide](webhook-handler-guide.md) - Create webhook handlers
+- [Framework Integration Guide](framework-integration-guide.md) - Integrate with web frameworks
 
-### 🎯 Examples & Tutorials
-- **[Real-World Examples](examples/README.md)** - Complete integration examples
-- **[Provider Recipes](provider-recipes.md)** - Common provider configurations
+## Reference
 
-## 🔄 Workflow Overview
+- [CLI Reference](cli-reference.md) - Command-line tool reference
+- [Provider Configuration Guide](provider-priority-guide.md) - Configure providers
+- [Package Setup Guide](package-setup-guide.md) - Set up the package
+- [Publishing Guide](publishing-guide.md) - Publish the package
 
-```mermaid
-graph TD
-    A[Define Provider Config] --> B[Generate Client Class]
-    B --> C[Use with IDE Support]
-    A --> D[Add Webhook Config]
-    D --> E[Generate Webhook Handlers]
-    E --> F[Integrate with Framework]
-```
+## Examples
 
-## 🆘 Need Help?
+- [API Examples](../examples/github_basic_example.py) - API client examples
+- [Webhook Examples](../examples/webhook_integration_example.py) - Webhook handler examples
+- [Framework Examples](../examples/flask_webhook_example.py) - Framework integration examples
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/smart-api-integrations/issues)
-- **Examples**: Check the `examples/` directory
-- **Community**: [Discussions](https://github.com/yourusername/smart-api-integrations/discussions)
+## Need Help?
 
-## 🚀 Quick Links
-
-| What you want to do | Documentation |
-|---------------------|---------------|
-| Get started quickly | [Quick Start Guide](quick-start-guide.md) |
-| Add a new API provider | [Adding New Providers](adding-new-providers.md) |
-| Handle webhooks | [Webhook System Overview](webhook-system-overview.md) |
-| Get full IDE support | [Type Safety Guide](type-safety-guide.md) |
-| See real examples | [Examples](examples/README.md) |
-| Use the CLI | [CLI Reference](cli-reference.md) | 
+If you can't find what you're looking for, please [open an issue](https://github.com/behera116/smart-api-integrations/issues) on GitHub. 
