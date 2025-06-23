@@ -1,16 +1,17 @@
 # 🚀 Smart API Integrations
 
-**Eliminate boilerplate when integrating 3rd party APIs. Define endpoints once, get intelligent client classes with full IDE support.**
+**Connect to any API without writing boilerplate code. Turn API documentation into ready-to-use Python functions.**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🎯 The Problem
+## 🎯 What This Package Does
 
-Integrating 3rd party APIs typically requires:
+Smart API Integrations makes it easy to use any API or receive webhook events (notifications from other services).
 
+### Without This Package:
 ```python
-# ❌ Lots of boilerplate for each API call
+# ❌ The old way: lots of repetitive code
 import requests
 
 def get_github_user(username):
@@ -27,23 +28,16 @@ def get_github_repo(owner, repo):
         raise Exception(f"API error: {response.status_code}")
     return response.json()
 
-# ... repeat for every endpoint
+# ... and so on for every endpoint
 ```
 
-## ✨ The Solution
-
-**Smart API Integrations** eliminates this boilerplate:
-
-1. **Define endpoints once** in a YAML config (manually or AI-generated)
-2. **Get a client class** with intelligent methods
-3. **Generate type stubs** for full IDE support
-
+### With Smart API Integrations:
 ```python
-# ✅ Zero boilerplate - just use the client
+# ✅ The better way: simple and clean
 from smart_api_integrations import GithubAPIClient
 
-github = GithubAPIClient()
-user = github.get_user(username='octocat')           # Full IDE support!
+github = GithubAPIClient()  # Uses GITHUB_TOKEN from environment variables
+user = github.get_user(username='octocat')
 repo = github.get_repo(owner='octocat', repo='Hello-World')
 ```
 
@@ -58,43 +52,59 @@ pip install smart-api-integrations
 ### 2. Set Environment Variables
 
 ```bash
+# Where to find API configurations
 export SMART_API_INTEGRATIONS_PROVIDERS_DIR="./providers"
 
-# Authentication tokens (provider-specific environment variables)
-export GITHUB_TOKEN="your_github_token"                    # Bearer token
-export STRIPE_API_KEY="sk_test_your_stripe_key"           # API key
-export MYAPI_USERNAME="your_username"                      # Basic auth
-export MYAPI_PASSWORD="your_password"                      # Basic auth
-export MYAPI_CLIENT_ID="your_client_id"                   # OAuth2 (provider-specific)
-export MYAPI_CLIENT_SECRET="your_client_secret"           # OAuth2 (provider-specific)
-export MYAPI_JWT_TOKEN="your_jwt_token"                   # JWT (provider-specific)
+# Your API tokens (examples for different services)
+export GITHUB_TOKEN="your_github_token"
+export STRIPE_API_KEY="sk_test_your_stripe_key"
 ```
 
 ### 3. Use Pre-built Providers
 
-GitHub provider comes pre-configured as an example:
-
 ```python
 from smart_api_integrations import GithubAPIClient
 
-# Uses GITHUB_TOKEN environment variable automatically
+# Create a client that automatically uses your GITHUB_TOKEN
 github = GithubAPIClient()
+
+# Get information about a user
 user = github.get_user(username='octocat')
 print(f"User: {user.data['name']}")
-
-# Or override authentication
-github = GithubAPIClient(token_value='your_custom_token')
 ```
-
-**Note**: GitHub is provided as a sample provider. For other APIs, follow the workflow below to add your own providers.
 
 ## 🔧 Adding New API Providers
 
-### Method 1: Manual Configuration
+### Method 1: Using the CLI (Easiest)
 
-Create `providers/myapi/config.yaml`:
+The command-line tool can help you create a new provider:
+
+```bash
+# Create a new provider configuration
+smart-api-integrations add-provider \
+    --name "myapi" \
+    --base-url "https://api.myservice.com/v1" \
+    --auth-type "bearer_token"
+```
+
+### Method 2: Generate from OpenAPI Documentation
+
+If your API has OpenAPI documentation (formerly known as Swagger), you can automatically generate a provider:
+
+```bash
+# Generate endpoints from API documentation
+smart-api-integrations openapi-to-config \
+    https://api.myservice.com/openapi.json \
+    --output-dir "./providers" \
+    --provider-name "myapi"
+```
+
+### Method 3: Manual Configuration
+
+Create a YAML file with your API details:
 
 ```yaml
+# providers/myapi/config.yaml
 name: myapi
 base_url: https://api.myservice.com/v1
 description: My API Service
@@ -115,144 +125,72 @@ endpoints:
     parameters:
       page: {type: integer, required: false, in: query}
       limit: {type: integer, required: false, in: query}
-  create_user:
-    path: /users
-    method: POST
-    description: Create a new user
-    parameters:
-      name: {type: string, required: true, in: body}
-      email: {type: string, required: true, in: body}
 ```
 
-### Method 2: AI-Generated Configuration
+## 🎯 Using Your API Provider
 
-```bash
-# Generate endpoints from API documentation
-smart-api-integrations add-endpoints myapi \
-    --url "https://docs.myservice.com/api" \
-    --max-endpoints 10
-```
+### Option 1: Use the Universal Client (Easiest)
 
-### Method 3: CLI Provider Creation
-
-```bash
-smart-api-integrations add-provider \
-    --name "myapi" \
-    --base-url "https://api.myservice.com/v1" \
-    --auth-type "bearer_token"
-```
-
-## 🎯 Creating Client Classes
-
-### Option 1: Use Universal Client
+The universal client works with any provider you've configured:
 
 ```python
 from smart_api_integrations import UniversalAPIClient
 
-# Works with any configured provider
-myapi = UniversalAPIClient('myapi')
+# Create a client for your API
+myapi = UniversalAPIClient('myapi')  # Uses environment variables for auth
+
+# Call API methods based on your config
 user = myapi.get_user(user_id='123')
 users = myapi.list_users(page=1, limit=10)
-new_user = myapi.create_user(name='John', email='john@example.com')
 ```
 
-### Option 2: Create Custom Client Class
+### Option 2: Generate a Dedicated Client Class
 
-Create `my_project/clients.py`:
-
-```python
-import os
-from smart_api_integrations.clients.universal import UniversalAPIClient
-
-class MyAPIClient(UniversalAPIClient):
-    """Custom client for MyAPI with additional business logic."""
-    
-    def __init__(self, **auth_overrides):
-        # Handle authentication based on your provider's auth type
-        if 'token_value' not in auth_overrides:
-            token = os.getenv('MYAPI_TOKEN')  # Bearer token
-            if token:
-                auth_overrides['token_value'] = token
-        
-        # For API key auth, use:
-        # if 'api_key_value' not in auth_overrides:
-        #     auth_overrides['api_key_value'] = os.getenv('MYAPI_KEY')
-        
-        super().__init__('myapi', **auth_overrides)
-    
-    def get_active_users(self):
-        """Get only active users - custom business logic."""
-        all_users = self.list_users()
-        if all_users.success:
-            return [user for user in all_users.data if user.get('status') == 'active']
-        return []
-    
-    def create_user_with_validation(self, name: str, email: str):
-        """Create user with email validation."""
-        if '@' not in email:
-            raise ValueError("Invalid email address")
-        return self.create_user(name=name, email=email)
-
-# Usage
-from my_project.clients import MyAPIClient
-
-api = MyAPIClient()  # Uses MYAPI_TOKEN automatically
-active_users = api.get_active_users()
-new_user = api.create_user_with_validation('John', 'john@example.com')
-```
-
-### Option 3: Generate Dedicated Client Class
+For better IDE support and type checking, you can generate a dedicated client class:
 
 ```bash
-# Generate a dedicated client class file
+# Generate a client class file
 smart-api-integrations generate-client myapi \
     --output-file "./my_project/myapi_client.py" \
     --class-name "MyAPIClient"
 ```
 
-This creates a standalone client class:
+Then use the generated class:
 
 ```python
-# Auto-generated my_project/myapi_client.py
-import os
-from typing import Optional, Dict, Any
+# Import your generated client
+from my_project.myapi_client import MyAPIClient
+
+# Create a client instance
+client = MyAPIClient()  # Uses environment variables for auth
+
+# Call methods with full IDE support
+user = client.get_user(user_id='123')
+```
+
+### Option 3: Create a Custom Client Class
+
+For advanced users who want to add custom business logic:
+
+```python
 from smart_api_integrations.clients.universal import UniversalAPIClient
-from smart_api_integrations.core.schema import APIResponse
 
 class MyAPIClient(UniversalAPIClient):
-    def __init__(self, **auth_overrides):
-        """
-        Initialize the myapi API client.
-        
-        Args:
-            **auth_overrides: Authentication overrides
-                            If not provided, reads from environment variables
-        """
-        # Set default authentication from environment if not provided
-        if 'token_value' not in auth_overrides:
-            token = os.getenv('MYAPI_TOKEN')
-            if token:
-                auth_overrides['token_value'] = token
-            else:
-                raise ValueError("myapi token required. Set MYAPI_TOKEN environment variable or pass token_value.")
-        super().__init__('myapi', **auth_overrides)
+    """Custom client with additional business logic."""
     
-    def get_user(self, user_id: str) -> APIResponse:
-        """Get user by ID."""
-        return self._client.call_endpoint('get_user', params={'user_id': user_id})
+    def __init__(self):
+        super().__init__('myapi')  # Use the 'myapi' provider
     
-    def list_users(self, page: int = None, limit: int = None) -> APIResponse:
-        """List all users."""
-        params = {}
-        if page is not None:
-            params['page'] = page
-        if limit is not None:
-            params['limit'] = limit
-        return self._client.call_endpoint('list_users', params=params)
-    
-    def create_user(self, name: str, email: str) -> APIResponse:
-        """Create a new user."""
-        return self._client.call_endpoint('create_user', json_data={'name': name, 'email': email})
+    def get_active_users(self):
+        """Get only active users."""
+        all_users = self.list_users()
+        if all_users.success:
+            return [user for user in all_users.data if user.get('status') == 'active']
+        return []
+
+# Usage
+client = MyAPIClient()
+active_users = client.get_active_users()
 ```
 
 ## 🛡️ Type Safety & IDE Support
@@ -395,6 +333,75 @@ customer = stripe.get_customer(customer_id='cus_123')
 # Custom methods
 safe_result = stripe.create_customer_safe('jane@example.com', 'Jane Doe')
 ```
+
+## 🔔 Receiving Webhooks (Events from Other Services)
+
+Webhooks are how other services send notifications to your application (like when a payment is made or a GitHub repository is updated).
+
+### Step 1: Configure a Webhook
+
+Create a webhook configuration file:
+
+```yaml
+# providers/stripe/webhook.yaml
+webhooks:
+  default:
+    path: /webhooks/stripe/
+    verify_signature: true
+    signing_secret_env: STRIPE_WEBHOOK_SECRET
+```
+
+### Step 2: Create Event Handlers
+
+```python
+from smart_api_integrations.webhooks import smart_webhook_handler
+
+# Handle a specific event type
+@smart_webhook_handler('stripe', 'payment_intent.succeeded')
+def handle_payment_success(event):
+    # This runs when a payment succeeds
+    payment_id = event.payload['data']['object']['id']
+    amount = event.payload['data']['object']['amount'] / 100  # Convert from cents
+    
+    print(f"Payment of ${amount} received! ID: {payment_id}")
+    
+    # Update your database, send confirmation email, etc.
+    return {"status": "processed"}
+```
+
+### Step 3: Connect to Your Web Framework
+
+#### Flask Example
+
+```python
+from flask import Flask
+from smart_api_integrations.frameworks.flask import register_webhook_routes
+
+app = Flask(__name__)
+
+# Register webhook routes
+register_webhook_routes(app)
+
+# Start your server
+if __name__ == "__main__":
+    app.run(port=5000)
+```
+
+#### FastAPI Example
+
+```python
+from fastapi import FastAPI
+from smart_api_integrations.frameworks.fastapi import register_webhook_routes
+
+app = FastAPI()
+
+# Register webhook routes
+register_webhook_routes(app)
+
+# Start with: uvicorn app:app --reload
+```
+
+Now your application can receive and process webhook events from other services!
 
 ## 🛠️ CLI Reference
 
