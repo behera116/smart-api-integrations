@@ -1,45 +1,39 @@
 # 🚀 Smart API Integrations
 
-**Connect to any API without writing boilerplate code. Turn API documentation into ready-to-use Python functions.**
+**Connect to any API and receive webhooks with minimal code. Turn API docs into Python functions and handle incoming events easily.**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🎯 What This Package Does
 
-Smart API Integrations makes it easy to use any API or receive webhook events (notifications from other services).
+Smart API Integrations has two main features:
 
-### Without This Package:
+1. **API Integration** - Connect to any API without writing boilerplate code
+2. **Webhook Handling** - Receive and process events from third-party services
+
+### API Integration Example:
 ```python
-# ❌ The old way: lots of repetitive code
-import requests
-
-def get_github_user(username):
-    headers = {'Authorization': f'token {GITHUB_TOKEN}'}
-    response = requests.get(f'https://api.github.com/users/{username}', headers=headers)
-    if response.status_code != 200:
-        raise Exception(f"API error: {response.status_code}")
-    return response.json()
-
-def get_github_repo(owner, repo):
-    headers = {'Authorization': f'token {GITHUB_TOKEN}'}
-    response = requests.get(f'https://api.github.com/repos/{owner}/{repo}', headers=headers)
-    if response.status_code != 200:
-        raise Exception(f"API error: {response.status_code}")
-    return response.json()
-
-# ... and so on for every endpoint
-```
-
-### With Smart API Integrations:
-```python
-# ✅ The better way: simple and clean
+# Connect to GitHub API with just a few lines
 from smart_api_integrations import GithubAPIClient
 
 github = GithubAPIClient()  # Uses GITHUB_TOKEN from environment variables
 user = github.get_user(username='octocat')
-repo = github.get_repo(owner='octocat', repo='Hello-World')
 ```
+
+### Webhook Example:
+```python
+# Handle Stripe payment events
+from smart_api_integrations.webhooks import smart_webhook_handler
+
+@smart_webhook_handler('stripe', 'payment_intent.succeeded')
+def handle_payment(event):
+    amount = event.payload['data']['object']['amount'] / 100
+    print(f"Payment received: ${amount}")
+    return {"status": "processed"}
+```
+
+[Jump to Webhook Documentation](#-webhook-integration)
 
 ## 🚀 Quick Start
 
@@ -72,6 +66,11 @@ github = GithubAPIClient()
 user = github.get_user(username='octocat')
 print(f"User: {user.data['name']}")
 ```
+
+### 4. Choose Your Integration Type
+
+- **[🔌 API Integration](#-using-your-api-provider)** - Connect to third-party APIs
+- **[🔔 Webhook Integration](#-webhook-integration)** - Receive events from services
 
 ## 🔧 Adding New API Providers
 
@@ -334,7 +333,7 @@ customer = stripe.get_customer(customer_id='cus_123')
 safe_result = stripe.create_customer_safe('jane@example.com', 'Jane Doe')
 ```
 
-## 🔔 Receiving Webhooks (Events from Other Services)
+## 🔔 Webhook Integration
 
 Webhooks are how other services send notifications to your application (like when a payment is made or a GitHub repository is updated).
 
@@ -402,6 +401,8 @@ register_webhook_routes(app)
 ```
 
 Now your application can receive and process webhook events from other services!
+
+**[📘 Read the Complete Webhook Documentation](docs/webhook_integration.md)**
 
 ## 🛠️ CLI Reference
 
