@@ -17,7 +17,8 @@ from .commands import (
     generate_type_stubs,
     generate_client,
     generate_webhook_handler,
-    smart_api_test
+    smart_api_test,
+    openapi_to_config
 )
 
 
@@ -53,6 +54,7 @@ def main(args: Optional[List[str]] = None) -> int:
     generate_client.register_command(subparsers)
     generate_webhook_handler.register_command(subparsers)
     smart_api_test.register_command(subparsers)
+    openapi_to_config.register_command(subparsers)
     
     # Parse arguments
     parsed_args = parser.parse_args(args)

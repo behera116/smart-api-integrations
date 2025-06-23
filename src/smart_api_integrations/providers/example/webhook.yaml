@@ -1,0 +1,18 @@
+
+# Provider-level configuration
+default_verification_type: hmac_sha256
+default_signature_header: X-Signature
+
+# Webhook configurations
+webhooks:
+  default:
+    path: /webhooks/example/
+    verify_signature: true
+    signing_secret_env: EXAMPLE_WEBHOOK_SECRET
+    verification_type: hmac_sha256
+    signature_header: X-Signature
+    events:
+      - order.created
+      - order.updated
+      - order.deleted
+    

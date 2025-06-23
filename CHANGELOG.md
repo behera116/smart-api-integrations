@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation structure
 - Type safety and IDE support guides
 - Real-world examples and tutorials
+- Enhanced webhook system with improved documentation
+- Framework integrations for Flask, Django, and FastAPI
+- CLI command for testing webhooks
+- Example webhook handler implementation
+- OpenAPI specification support for client generation
 
 ## [0.1.0] - 2024-06-22
 

@@ -835,3 +835,177 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ```bash
 pip install smart-api-integrations
 ```
+
+# Smart API Integrations
+
+Connect to any third-party API or receive webhook events without writing boilerplate code.
+
+## What This Library Does
+
+### For API Requests (Outgoing)
+This library turns any API into simple function calls, like having an official SDK for any service.
+
+Instead of writing:
+```python
+# Without Smart API Integrations
+import requests
+headers = {"Authorization": f"Bearer {token}"}
+response = requests.get("https://api.example.com/users/123", headers=headers)
+if response.status_code == 200:
+    user = response.json()
+else:
+    raise Exception(f"API error: {response.status_code}")
+```
+
+You can write:
+```python
+# With Smart API Integrations
+client = UniversalAPIClient("example")
+user = client.get_user(user_id=123)  # That's it!
+```
+
+### For Webhooks (Incoming)
+When services need to send data to your application (like payment notifications), this library:
+1. Sets up the URLs where services can send data
+2. Verifies the data is legitimate (not fake)
+3. Routes each event type to your specific handler function
+
+Instead of writing security, routing, and parsing code, just write what should happen for each event:
+```python
+@processor.on("payment.succeeded")
+def handle_payment(event):
+    print(f"Payment received: ${event.payload['amount']}")
+    # Update your database, send email, etc.
+```
+
+## Features
+
+- **Turn Any API into Function Calls**: Use any API like it has an official SDK
+- **OpenAPI Support**: Instantly create clients from API documentation
+- **Smart Parameter Handling**: Automatically puts parameters in the right place (URL, query, body)
+- **Built-in Security**: Handles authentication, signatures, and tokens
+- **Error Protection**: Automatic retries and rate limiting
+- **Webhook Receiver**: Secure endpoint creation for incoming data
+- **Framework Ready**: Works with Flask, Django, or FastAPI
+
+## Installation
+
+```bash
+pip install smart-api-integrations
+```
+
+## Quick Start
+
+### Using with YAML Configuration
+
+```python
+from smart_api_integrations import UniversalAPIClient
+
+# Create a client for the GitHub API
+client = UniversalAPIClient("github")
+
+# List repositories for the authenticated user
+response = client.list_repos()
+print(response.data)
+```
+
+### Using with OpenAPI Specification
+
+```python
+from smart_api_integrations import UniversalAPIClient
+from smart_api_integrations.cli.openapi_converter import convert_openapi_to_config
+
+# Convert OpenAPI specification to config.yaml (one-time operation)
+config_file = convert_openapi_to_config(
+    "https://petstore3.swagger.io/api/v3/openapi.json",
+    output_dir="path/to/providers",
+    provider_name="petstore"
+)
+
+# Create a client using the generated config.yaml
+client = UniversalAPIClient("petstore")
+
+# Call methods using snake_case
+pet = client.get_pet_by_id(petId=1)
+print(pet.data)
+
+# Or using the original camelCase operationId
+pet = client.getPetById(petId=1)
+print(pet.data)
+```
+
+### Using Webhooks
+
+First, create a configuration file for the service sending webhooks:
+
+```yaml
+# providers/stripe/webhook.yaml
+webhooks:
+  default:
+    path: /webhooks/stripe/
+    verify_signature: true
+    signing_secret_env: STRIPE_WEBHOOK_SECRET
+```
+
+Then set up your webhook handlers:
+
+```python
+from smart_api_integrations.core.webhook_registry import get_webhook_registry
+
+# Step 1: Create a webhook processor
+registry = get_webhook_registry()
+processor = registry.create_processor("stripe", "default")
+
+# Step 2: Add handlers for different event types
+@processor.on("payment.succeeded")
+def handle_payment_succeeded(event):
+    # This runs when a payment succeeds
+    order_id = event.payload["data"]["object"]["metadata"]["order_id"]
+    amount = event.payload["data"]["object"]["amount"]
+    
+    print(f"Payment of ${amount/100} received for order {order_id}")
+    # Update order status in database, send confirmation email, etc.
+    return {"status": "processed"}
+
+@processor.on("payment.failed")
+def handle_payment_failed(event):
+    # This runs when a payment fails
+    order_id = event.payload["data"]["object"]["metadata"]["order_id"]
+    print(f"Payment failed for order {order_id}")
+    # Update order status, notify customer, etc.
+    return {"status": "handled"}
+
+# Step 3: Connect to your web framework (Flask example)
+from flask import Flask
+from smart_api_integrations.frameworks.flask import register_webhook_routes
+
+app = Flask(__name__)
+register_webhook_routes(app)  # Creates URLs like /webhooks/stripe/
+
+# Step 4: Start your server
+app.run()
+```
+
+The library handles:
+- Creating secure URLs for each service
+- Verifying webhook signatures
+- Parsing event data
+- Routing to the right handler function
+- Sending proper responses back
+
+## Documentation
+
+### Getting Started Guides
+- [Using OpenAPI Specifications](docs/openapi_integration.md) - Create API clients from API documentation
+- [Setting Up Webhooks](docs/webhook_integration.md) - Receive and process events from third-party services
+
+### Common Use Cases
+- Connect to payment providers (Stripe, PayPal)
+- Integrate with CRM systems (Salesforce, HubSpot)
+- Use social media APIs (Twitter, Facebook)
+- Receive notifications (webhooks) when events happen
+
+## Examples
+
+- [OpenAPI Converter Example](examples/openapi_converter_example.py)
+- [Webhook Handler Example](examples/webhook_handler_example.py)
