@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "smart-api-integrations"
 version = "0.2.0"
-description = "Connect to any API without writing boilerplate code. Turn API documentation into ready-to-use Python functions."
+description = "Connect to any API and receive webhooks with minimal code. Turn API docs into Python functions and handle incoming events easily."
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
