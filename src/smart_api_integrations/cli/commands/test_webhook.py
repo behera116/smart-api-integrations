@@ -4,17 +4,79 @@ CLI command for testing webhooks.
 
 import json
 import logging
+import sys
 import click
 import requests
 from pathlib import Path
 import hmac
 import hashlib
 from datetime import datetime, timezone
+import argparse
 
 from smart_api_integrations.core.webhook_registry import get_webhook_registry
 from smart_api_integrations.core.webhook_schema import WebhookEvent
 
 logger = logging.getLogger(__name__)
+
+
+def register_command(subparsers: argparse._SubParsersAction) -> None:
+    """Register the command with the given subparsers."""
+    parser = subparsers.add_parser(
+        "test-webhook",
+        help="Test a webhook by simulating an event",
+        description="Test a webhook by simulating an event. If --url is provided, sends a real HTTP request to the specified URL. Otherwise, processes the webhook locally using the registered handlers."
+    )
+    
+    parser.add_argument(
+        "provider",
+        help="Provider name"
+    )
+    
+    parser.add_argument(
+        "--webhook-name", "-w",
+        default="default",
+        help="Name of the webhook to test"
+    )
+    
+    parser.add_argument(
+        "--event", "-e",
+        required=True,
+        help="Event type to simulate"
+    )
+    
+    parser.add_argument(
+        "--payload", "-p",
+        help="Path to JSON file with payload data"
+    )
+    
+    parser.add_argument(
+        "--url", "-u",
+        help="URL to send the webhook to"
+    )
+    
+    parser.add_argument(
+        "--secret", "-s",
+        help="Secret to use for signature verification"
+    )
+    
+    parser.set_defaults(func=command_func)
+
+
+def command_func(args: argparse.Namespace) -> int:
+    """Execute the command."""
+    try:
+        test_webhook(
+            args.provider,
+            args.webhook_name,
+            args.event,
+            args.payload,
+            args.url,
+            args.secret
+        )
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
 
 
 @click.command("test-webhook")
