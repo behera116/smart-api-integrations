@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smart-api-integrations"
-version = "0.1.0"
-description = "Eliminate API integration boilerplate. Define endpoints once, get intelligent client classes with full IDE support."
+version = "0.2.0"
+description = "Connect to any API without writing boilerplate code. Turn API documentation into ready-to-use Python functions."
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -20,7 +20,7 @@ keywords = [
     "sdk", "http", "requests", "type-safe", "cli"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
