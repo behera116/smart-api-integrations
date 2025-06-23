@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Import the client
-from src.core.registry import get_client
+from smart_api_integrations.core.registry import get_client
 
 # Skip all tests if no GitHub token is available
 pytestmark = pytest.mark.skipif(

@@ -157,6 +157,10 @@ class ConfigLoader:
         # Get base URL from servers
         base_url = servers[0]['url'] if servers else 'https://api.example.com'
         
+        # Make sure base_url starts with http:// or https://
+        if not base_url.startswith(('http://', 'https://')):
+            base_url = 'https://' + base_url.lstrip('/')
+        
         # Extract security schemes for auth
         auth_config = self._extract_auth_from_openapi(openapi_spec)
         
@@ -168,25 +172,56 @@ class ConfigLoader:
                 if method.upper() not in [m.value for m in HTTPMethod]:
                     continue
                 
+                # Get operationId or generate one
                 operation_id = operation.get('operationId', f"{method}_{path.replace('/', '_')}")
-                endpoints[operation_id] = EndpointConfig(
+                
+                # Create endpoint config with OpenAPI-specific attributes
+                endpoint_config = EndpointConfig(
                     path=path,
                     method=HTTPMethod(method.upper()),
-                    description=operation.get('summary', operation.get('description')),
+                    description=operation.get('description', ''),
                     parameters=self._extract_parameters_from_openapi(operation),
                     body_schema=self._extract_request_body_from_openapi(operation),
                     response_schema=self._extract_responses_from_openapi(operation)
                 )
+                
+                # Add OpenAPI-specific metadata
+                endpoint_config.operation_id = operation_id
+                endpoint_config.summary = operation.get('summary', '')
+                endpoint_config.tags = operation.get('tags', [])
+                endpoint_config.deprecated = operation.get('deprecated', False)
+                endpoint_config.security = operation.get('security')
+                
+                # Check if request body is required
+                if 'requestBody' in operation:
+                    endpoint_config.request_body_required = operation['requestBody'].get('required', False)
+                
+                # Store full response schema
+                endpoint_config.responses = operation.get('responses')
+                
+                endpoints[operation_id] = endpoint_config
         
-        return ProviderConfig(
+        # Create provider config with OpenAPI-specific metadata
+        provider_config = ProviderConfig(
             name=provider_name,
             base_url=base_url,
-            description=info.get('description'),
+            description=info.get('description', ''),
             version=info.get('version', '1.0'),
             auth=auth_config,
             endpoints=endpoints,
-            use_openapi_client=True
+            use_openapi_client=True,
+            
+            # OpenAPI-specific fields
+            openapi_version=openapi_spec.get('openapi', '3.0.0'),
+            servers=servers,
+            components=openapi_spec.get('components'),
+            info=info,
+            # Process tags to ensure they're in the right format
+            tags=[{'name': tag.get('name', ''), 'description': tag.get('description', '')} 
+                 for tag in openapi_spec.get('tags', []) if isinstance(tag, dict)]
         )
+        
+        return provider_config
     
     def _process_auth_config(self, auth_data: Dict[str, Any]) -> AuthConfig:
         """Process authentication configuration."""
@@ -280,7 +315,12 @@ class ConfigLoader:
                 'type': param_schema.get('type'),
                 'description': param.get('description'),
                 'required': param.get('required', False),
-                'in': param.get('in')  # query, header, path, cookie
+                'in': param.get('in'),  # query, header, path, cookie
+                'schema': param_schema,  # Store the full schema
+                'example': param.get('example'),
+                'examples': param.get('examples'),
+                'default': param_schema.get('default'),
+                'enum': param_schema.get('enum')
             }
         
         return param_schemas
@@ -295,7 +335,13 @@ class ConfigLoader:
         # Prefer JSON content
         for content_type in ['application/json', 'application/x-www-form-urlencoded']:
             if content_type in content:
-                return content[content_type].get('schema')
+                schema = content[content_type].get('schema')
+                if schema:
+                    # If it's a reference, keep the reference
+                    if '$ref' in schema:
+                        return schema
+                    # Otherwise, return the full schema
+                    return schema
         
         return None
     
@@ -311,6 +357,12 @@ class ConfigLoader:
                 response = responses[status_code]
                 content = response.get('content', {})
                 if 'application/json' in content:
-                    return content['application/json'].get('schema')
+                    schema = content['application/json'].get('schema')
+                    if schema:
+                        # If it's a reference, keep the reference
+                        if '$ref' in schema:
+                            return schema
+                        # Otherwise, return the full schema
+                        return schema
         
         return None 

@@ -78,6 +78,15 @@ class EndpointConfig(BaseModel):
     timeout: Optional[float] = None
     rate_limit: Optional[RateLimitConfig] = None
     retry: Optional[RetryConfig] = None
+    
+    # OpenAPI-specific fields
+    operation_id: Optional[str] = None
+    summary: Optional[str] = None
+    tags: Optional[List[str]] = None
+    deprecated: Optional[bool] = False
+    security: Optional[List[Dict[str, List[str]]]] = None
+    request_body_required: Optional[bool] = False
+    responses: Optional[Dict[str, Any]] = None
 
 
 class ProviderConfig(BaseModel):
@@ -94,6 +103,13 @@ class ProviderConfig(BaseModel):
     endpoints: Dict[str, EndpointConfig] = Field(default_factory=dict)
     openapi_spec_url: Optional[str] = None
     use_openapi_client: bool = False
+    
+    # OpenAPI-specific fields
+    openapi_version: Optional[str] = None
+    servers: Optional[List[Dict[str, Any]]] = None
+    components: Optional[Dict[str, Any]] = None
+    info: Optional[Dict[str, Any]] = None
+    tags: Optional[List[Dict[str, str]]] = None
 
     @validator('base_url')
     def validate_base_url(cls, v):

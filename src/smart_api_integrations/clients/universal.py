@@ -5,7 +5,8 @@ Synchronous implementation for simplicity.
 
 import os
 import inspect
-from typing import Any, Dict, Optional, Protocol, runtime_checkable, Callable
+import re
+from typing import Any, Dict, Optional, Protocol, runtime_checkable, Callable, List
 from ..core.schema import APIResponse
 
 
@@ -36,6 +37,43 @@ class UniversalAPIClient:
         self.provider_name = provider_name
         self._config = getattr(self._smart_client, 'config', None)
         self._method_cache: Dict[str, APIMethod] = {}
+        
+        # Initialize OpenAPI-specific mappings
+        self._operation_id_mapping = self._build_operation_id_mapping()
+    
+    def _build_operation_id_mapping(self) -> Dict[str, str]:
+        """Build mapping from operationId to endpoint names."""
+        mapping = {}
+        
+        if not (self._config and hasattr(self._config, 'endpoints') and self._config.endpoints):
+            return mapping
+        
+        for endpoint_name, endpoint_config in self._config.endpoints.items():
+            # Check if this endpoint has an operationId (from OpenAPI)
+            if hasattr(endpoint_config, 'operation_id') and endpoint_config.operation_id:
+                operation_id = endpoint_config.operation_id
+                
+                # Create more intuitive method names
+                method_name = self._create_method_name(operation_id)
+                mapping[method_name] = endpoint_name
+                
+                # Also map the original operationId
+                if operation_id != method_name:
+                    mapping[operation_id] = endpoint_name
+        
+        return mapping
+    
+    def _create_method_name(self, operation_id: str) -> str:
+        """Create a more intuitive method name from operationId."""
+        # Convert camelCase to snake_case
+        method_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', operation_id).lower()
+        
+        # Handle common patterns
+        method_name = method_name.replace('_by_id', '_by_id')
+        method_name = method_name.replace('_by_name', '_by_name')
+        method_name = method_name.replace('_by_status', '_by_status')
+        
+        return method_name
     
     def _get_endpoint_config(self, endpoint_name: str) -> Optional[Dict]:
         """Get configuration for a specific endpoint."""
@@ -150,10 +188,14 @@ class UniversalAPIClient:
         method = getattr(endpoint_config, 'method', 'GET')
         path = getattr(endpoint_config, 'path', '')
         description = getattr(endpoint_config, 'description', '')
+        summary = getattr(endpoint_config, 'summary', '')
+        
+        # Use summary if available, otherwise description
+        desc_text = summary or description
         
         help_text = f"{method} {path}"
-        if description:
-            help_text += f" - {description}"
+        if desc_text:
+            help_text += f" - {desc_text}"
         
         # Add parameter information
         if hasattr(endpoint_config, 'parameters') and endpoint_config.parameters:
@@ -180,14 +222,88 @@ class UniversalAPIClient:
                 help_text += f"\n  - {param_name} ({param_type}, in {param_location}){req_text}"
                 if param_desc:
                     help_text += f": {param_desc}"
+                
+                # Add enum values if available
+                enum_values = None
+                if hasattr(param_def, 'enum'):
+                    enum_values = param_def.enum
+                elif isinstance(param_def, dict) and 'enum' in param_def:
+                    enum_values = param_def['enum']
+                
+                if enum_values:
+                    help_text += f" [options: {', '.join(map(str, enum_values))}]"
+        
+        # Add request body information
+        if hasattr(endpoint_config, 'body_schema') and endpoint_config.body_schema:
+            help_text += "\n\nRequest Body:"
+            help_text += "\n  - Content-Type: application/json"
+            if isinstance(endpoint_config.body_schema, dict):
+                if 'properties' in endpoint_config.body_schema:
+                    help_text += "\n  - Properties:"
+                    for prop_name, prop_def in endpoint_config.body_schema['properties'].items():
+                        prop_type = prop_def.get('type', 'unknown')
+                        prop_desc = prop_def.get('description', '')
+                        help_text += f"\n    - {prop_name} ({prop_type})"
+                        if prop_desc:
+                            help_text += f": {prop_desc}"
         
         # Add usage examples
-        if method in ['POST', 'PUT', 'PATCH']:
-            help_text += f"\n\nUsage: client.{endpoint_name}(json_data={{...}}, params={{...}})"
-        else:
-            help_text += f"\n\nUsage: client.{endpoint_name}(params={{...}})"
+        help_text += self._generate_usage_examples(endpoint_name, endpoint_config)
         
         return help_text
+    
+    def _generate_usage_examples(self, endpoint_name: str, endpoint_config: Any) -> str:
+        """Generate usage examples based on endpoint configuration."""
+        method = getattr(endpoint_config, 'method', 'GET')
+        path = getattr(endpoint_config, 'path', '')
+        
+        examples = "\n\nUsage Examples:"
+        
+        # Find the method name for this endpoint
+        method_name = endpoint_name
+        for mapped_name, mapped_endpoint in self._operation_id_mapping.items():
+            if mapped_endpoint == endpoint_name:
+                method_name = mapped_name
+                break
+        
+        if method in ['GET', 'DELETE']:
+            # Path parameters example
+            path_params = self._extract_path_params(path)
+            if path_params:
+                param_example = ', '.join([f"{param}=123" for param in path_params])
+                examples += f"\n  client.{method_name}({param_example})"
+            
+            # Query parameters example
+            if hasattr(endpoint_config, 'parameters') and endpoint_config.parameters:
+                query_params = [name for name, param_def in endpoint_config.parameters.items() 
+                              if self._get_param_location(param_def) == 'query']
+                if query_params:
+                    param_example = ', '.join([f"{param}='value'" for param in query_params[:2]])
+                    examples += f"\n  client.{method_name}({param_example})"
+        
+        elif method in ['POST', 'PUT', 'PATCH']:
+            # JSON body example
+            examples += f"\n  client.{method_name}(json_data={{'key': 'value'}})"
+            
+            # Path parameters + JSON body example
+            path_params = self._extract_path_params(path)
+            if path_params:
+                param_example = ', '.join([f"{param}=123" for param in path_params])
+                examples += f"\n  client.{method_name}({param_example}, json_data={{'key': 'value'}})"
+        
+        return examples
+    
+    def _extract_path_params(self, path: str) -> list:
+        """Extract path parameters from a path string."""
+        import re
+        return re.findall(r'\{([^}]+)\}', path)
+    
+    def _get_param_location(self, param_def: Any) -> str:
+        """Get parameter location (query, path, header, etc.)."""
+        if isinstance(param_def, dict):
+            return param_def.get('in', 'query')
+        else:
+            return getattr(param_def, 'in', 'query')
     
     def _create_typed_method(self, endpoint_name: str) -> APIMethod:
         """Create a typed method for an endpoint."""
@@ -207,7 +323,7 @@ class UniversalAPIClient:
         """
         Dynamically create methods for API endpoints with validation and typing.
         
-        First checks METHOD_MAPPING, then falls back to direct endpoint name.
+        First checks METHOD_MAPPING, then OpenAPI operation IDs, then falls back to direct endpoint name.
         Returns a properly typed method that IDEs can understand.
         """
         # Check cache first
@@ -215,7 +331,15 @@ class UniversalAPIClient:
             return self._method_cache[name]
         
         # Check if method is mapped to a specific endpoint
-        endpoint_name = self.METHOD_MAPPING.get(name, name)
+        endpoint_name = self.METHOD_MAPPING.get(name, None)
+        
+        # If not in METHOD_MAPPING, check OpenAPI operation ID mapping
+        if endpoint_name is None and name in self._operation_id_mapping:
+            endpoint_name = self._operation_id_mapping[name]
+        
+        # If still not found, use the name directly
+        if endpoint_name is None:
+            endpoint_name = name
         
         # Create the typed method
         method = self._create_typed_method(endpoint_name)
@@ -227,7 +351,17 @@ class UniversalAPIClient:
     
     def get_method_help(self, method_name: str) -> str:
         """Get help documentation for a specific method."""
-        endpoint_name = self.METHOD_MAPPING.get(method_name, method_name)
+        # Check if method is mapped to a specific endpoint
+        endpoint_name = self.METHOD_MAPPING.get(method_name, None)
+        
+        # If not in METHOD_MAPPING, check OpenAPI operation ID mapping
+        if endpoint_name is None and method_name in self._operation_id_mapping:
+            endpoint_name = self._operation_id_mapping[method_name]
+        
+        # If still not found, use the name directly
+        if endpoint_name is None:
+            endpoint_name = method_name
+            
         return self._get_method_help(endpoint_name)
     
     def list_available_methods(self) -> Dict[str, str]:
@@ -236,18 +370,60 @@ class UniversalAPIClient:
         
         if self._config and hasattr(self._config, 'endpoints') and self._config.endpoints:
             for endpoint_name in self._config.endpoints.keys():
+                # Get endpoint config
+                endpoint_config = self._config.endpoints[endpoint_name]
+                
+                # Get description (prefer summary if available)
+                description = getattr(endpoint_config, 'description', f"Call {endpoint_name} endpoint")
+                summary = getattr(endpoint_config, 'summary', '')
+                desc_text = summary or description
+                
                 # Check if there's a mapped method name
                 method_name = endpoint_name
+                
+                # Check in METHOD_MAPPING
                 for mapped_name, mapped_endpoint in self.METHOD_MAPPING.items():
                     if mapped_endpoint == endpoint_name:
                         method_name = mapped_name
                         break
                 
-                endpoint_config = self._config.endpoints[endpoint_name]
-                description = getattr(endpoint_config, 'description', f"Call {endpoint_name} endpoint")
-                methods[method_name] = description
+                # Check in OpenAPI operation ID mapping
+                for mapped_name, mapped_endpoint in self._operation_id_mapping.items():
+                    if mapped_endpoint == endpoint_name:
+                        # Prefer snake_case version
+                        if '_' in mapped_name:
+                            method_name = mapped_name
+                            break
+                
+                methods[method_name] = desc_text
+                
+                # If this is from OpenAPI, also add the original operationId
+                if hasattr(endpoint_config, 'operation_id') and endpoint_config.operation_id:
+                    if endpoint_config.operation_id != method_name:
+                        methods[endpoint_config.operation_id] = f"{desc_text} (operationId)"
         
         return methods
+    
+    def get_api_info(self) -> Dict[str, Any]:
+        """Get information about the API."""
+        info = {
+            'provider': self.provider_name,
+            'base_url': getattr(self._config, 'base_url', ''),
+            'description': getattr(self._config, 'description', ''),
+            'version': getattr(self._config, 'version', ''),
+        }
+        
+        # Add OpenAPI-specific information if available
+        if hasattr(self._config, 'openapi_version'):
+            info['openapi_version'] = self._config.openapi_version
+        
+        if hasattr(self._config, 'info') and self._config.info:
+            info['title'] = self._config.info.get('title', '')
+            info['terms_of_service'] = self._config.info.get('termsOfService', '')
+            info['contact'] = self._config.info.get('contact', {})
+            info['license'] = self._config.info.get('license', {})
+        
+        return info
     
     def call_raw(self, method: str, path: str, **kwargs: Any) -> APIResponse:
         """Make a raw API call."""
